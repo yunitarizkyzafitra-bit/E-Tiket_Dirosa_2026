@@ -3,58 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <title>Sistem Kontrol Tiket Dirosa 9</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS Terintegrasi untuk Tampilan Mewah & Responsif */
+        :root { --emerald: #064e3b; --gold: #d4af37; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; }
+        .sidebar { width: 260px; background: var(--emerald); color: white; height: 100vh; padding: 20px; text-align: center; }
+        .sidebar img { width: 80px; border-radius: 50%; }
+        .content { flex-grow: 1; padding: 40px; animation: fadeIn 0.8s ease; }
+        .card { background: white; padding: 25px; border-radius: 12px; border-top: 5px solid var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .input-field { width: 100%; max-width: 250px; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; display: block; }
+        .emerald-btn { padding: 10px 25px; background: var(--emerald); color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .status-terjual { color: #dc2626; font-weight: bold; }
+        .status-tersedia { color: #059669; font-weight: bold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="brand-box">
-                <img src="URL_LOGO_MWD_ANDA.png" class="sidebar-logo">
-                <h2>MWD</h2>
+
+    <aside class="sidebar">
+        <img src="URL_LOGO_MWD.png" alt="MWD">
+        <h2>MWD</h2>
+        <nav>
+            <p onclick="window.location.reload()" style="cursor:pointer">📊 Dashboard</p>
+            <p onclick="window.print()" style="cursor:pointer">📄 Export PDF</p>
+        </nav>
+        <img src="URL_GAMBAR_TIKET.png" style="width:100%; max-width:150px; margin-top:20px;">
+    </aside>
+
+    <main class="content">
+        <section id="login-section" class="card">
+            <h3>Verifikasi Petugas</h3>
+            <input type="text" id="input-pj" class="input-field" placeholder="Nama PJ">
+            <input type="password" id="input-pin" class="input-field" placeholder="PIN (5 digit)">
+            <button class="emerald-btn" onclick="handleLogin()">Masuk Sistem</button>
+        </section>
+
+        <section id="dashboard-section" style="display:none;">
+            <div class="metrics-grid">
+                <div class="card"><h3>Total</h3><p id="total">0</p></div>
+                <div class="card"><h3>Terjual</h3><p id="terjual" class="status-terjual">0</p></div>
+                <div class="card"><h3>Sisa</h3><p id="sisa" class="status-tersedia">0</p></div>
             </div>
-            <nav>
-                <a href="#" onclick="showSection('dashboard')">📊 Dashboard</a>
-                <a href="#" onclick="showSection('input')">✍️ Input Transaksi</a>
-            </nav>
-            <div class="ticket-preview">
-                <img src="URL_GAMBAR_TIKET_ANDA.png" class="ticket-img">
-            </div>
-        </aside>
-
-        <main id="main-content" class="content">
-            <header class="app-header"><h1>Kontrol Tiket Dirosa 9</h1></header>
-
-            <section id="login-section" class="card">
-                <h3>Verifikasi Petugas</h3>
-                <input type="text" id="input-pj" placeholder="Nama PJ" class="input-field">
-                <div style="position: relative;">
-                    <input type="password" id="input-pin" placeholder="PIN Otorisasi" class="input-field">
-                    <span id="toggle-pin" onclick="toggleVisibility()" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">👁️</span>
-                </div>
-                <button class="emerald-btn" onclick="handleLogin()">Login</button>
-            </section>
-
-            <section id="dashboard-section" style="display:none;">
-                <div class="metrics-grid">
-                    <div class="card"><h3>Total</h3><p id="total">0</p></div>
-                    <div class="card"><h3>Terjual</h3><p id="terjual" class="status-terjual">0</p></div>
-                    <div class="card"><h3>Sisa</h3><p id="sisa" class="status-tersedia">0</p></div>
-                </div>
-            </section>
-        </main>
-    </div>
+        </section>
+    </main>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwt91vNNDBqssMWmWp2VkuCHsqVT1YQ2BzsgqDfdKRZpl2ecfsMyZ8nR8IrLr4Xt9JTKQ/exec";
-
-        function toggleVisibility() {
-            const p = document.getElementById('input-pin');
-            p.type = (p.type === "password") ? "text" : "password";
-        }
+        // Masukkan URL Web App Anda di bawah ini
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw_mweJkBIuDY2mNKvP2q0BSRxOUYNnETgqDBHn-ChYalDjaF_gBJvU-37Zt6ztz772Og/exec";
 
         async function handleLogin() {
             const nama = document.getElementById('input-pj').value;
             const pin = document.getElementById('input-pin').value;
+            
             fetch(`${GAS_URL}?action=login&nama=${nama}&pin=${pin}`)
             .then(res => res.json())
             .then(res => {
@@ -62,8 +63,7 @@
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('dashboard-section').style.display = 'block';
                 } else {
-                    document.getElementById('login-section').classList.add('shake');
-                    alert("Kredensial Salah");
+                    alert("Kredensial salah!");
                 }
             });
         }
