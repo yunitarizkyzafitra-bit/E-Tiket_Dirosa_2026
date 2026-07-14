@@ -2,71 +2,59 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>MWD Professional Dashboard</title>
+    <title>Kontrol Tiket Dirosa 9</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #009688; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; }
-        .sidebar { width: 250px; background: var(--primary); color: white; height: 100vh; padding: 20px; }
-        .content { flex: 1; padding: 30px; }
-        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .chart-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #eee; padding: 10px; }
-        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        :root { --emerald: #064e3b; --gold: #d4af37; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 5px solid var(--gold); }
+        .chart-container { height: 350px; }
+        .btn-export { background: var(--gold); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        @media print { .btn-export, #login-box { display: none; } }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h3>MWD Admin</h3>
-        <p>📊 Dashboard</p>
-        <img src="MWD.png" style="width:100px; border-radius:50%; display:block; margin: 20px auto;">
-        <img src="Gambar%20Tiket.png" style="width:150px; display:block; margin: 0 auto;">
+    <div class="card">
+        <button class="btn-export" onclick="window.print()">📄 Export PDF</button>
+        <h2 style="color:var(--emerald)">Kontrol Tiket Tasyakuran Dirosa Angkatan 9</h2>
+        <div class="chart-container"><canvas id="myChart"></canvas></div>
     </div>
 
-    <main class="content">
-        <div id="login-box" class="card">
-            <input type="text" id="user" placeholder="Nama">
-            <input type="password" id="pass" placeholder="PIN">
-            <button onclick="auth()">Login</button>
-        </div>
-
-        <div id="dashboard" style="display:none;">
-            <div class="stats-row">
-                <div class="card"><h4>Penjualan Hari Ini</h4><p id="harian">Rp 0</p></div>
-                <div class="card"><h4>Penjualan Bulan Ini</h4><p id="bulanan">Rp 0</p></div>
-            </div>
-            <div class="chart-container">
-                <canvas id="dailyChart" class="card"></canvas>
-                <canvas id="monthlyChart" class="card"></canvas>
-            </div>
-            <div class="card">
-                <h4>Log Transaksi</h4>
-                <table id="log"><thead><tr><th>Tanggal</th><th>PJ</th><th>Jumlah</th></tr></thead><tbody></tbody></table>
-            </div>
-        </div>
-    </main>
+    <div class="card" id="login-box">
+        <h3>Login Input (PJ)</h3>
+        <input id="user" placeholder="Nama PJ">
+        <input type="password" id="pin" placeholder="PIN">
+        <button onclick="login()">Masuk</button>
+    </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbymM2YlXvco22JoVxpCRsD2VllI-VHRIXHZy1QZ1TTSh5dDZ15seXWpvire8qct1GcoxQ/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzvODAIxmX1yoEdvJXgP3WlPidwCYafNIl2OCiJ3JOrU0y0d7SurmeBFcsH0xK5sd6NsA/exec";
+        
+        window.onload = loadData;
 
-        async function auth() {
-            let n = document.getElementById('user').value;
-            let p = document.getElementById('pass').value;
-            let res = await fetch(`${GAS_URL}?action=login&nama=${n}&pin=${p}`).then(r => r.json());
-            if(res.status === "success") {
-                document.getElementById('login-box').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                initData();
-            } else { alert("Kredensial tidak sesuai. Periksa spasi/tipe data di Spreadsheet."); }
+        function loadData() {
+            google.script.run.withSuccessHandler(res => {
+                let ctx = document.getElementById('myChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(res.report),
+                        datasets: [
+                            { label: 'Tiket Terjual', data: Object.values(res.report), backgroundColor: '#064e3b' },
+                            { label: 'Tren', data: Object.values(res.report), type: 'line', borderColor: '#d4af37', fill: false }
+                        ]
+                    }
+                });
+            }).getDashboardData();
         }
 
-        async function initData() {
-            let res = await fetch(`${GAS_URL}?action=getData`).then(r => r.json());
-            document.getElementById('harian').innerText = "Rp " + res.harian;
-            // Rendering Chart menggunakan Chart.js
-            new Chart(document.getElementById('dailyChart'), { type: 'line', data: { labels: res.labels, datasets: [{ label: 'Penjualan Harian', data: res.values }] } });
+        function login() {
+            let u = document.getElementById('user').value;
+            let p = document.getElementById('pin').value;
+            google.script.run.withSuccessHandler(res => {
+                if(res) alert("Login Berhasil! Anda memiliki akses input.");
+                else alert("Kredensial salah.");
+            }).verifyLogin(u, p);
         }
     </script>
 </body>
