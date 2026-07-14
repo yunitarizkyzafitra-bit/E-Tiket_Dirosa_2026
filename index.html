@@ -2,85 +2,70 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Kontrol Tiket Dirosa 9</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
         <aside class="sidebar">
-            <div class="brand">DIROSA 9</div>
+            <div class="brand-box">
+                <img src="URL_LOGO_MWD_ANDA.png" class="sidebar-logo">
+                <h2>MWD</h2>
+            </div>
             <nav>
                 <a href="#" onclick="showSection('dashboard')">📊 Dashboard</a>
                 <a href="#" onclick="showSection('input')">✍️ Input Transaksi</a>
-                <a href="#" onclick="exportPDF()">📄 Export PDF</a>
             </nav>
+            <div class="ticket-preview">
+                <img src="URL_GAMBAR_TIKET_ANDA.png" class="ticket-img">
+            </div>
         </aside>
 
         <main id="main-content" class="content">
-            <header class="app-header">
-                <div class="header-logo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40" class="ticket-icon">
-                        <path d="M2 5h20v4a2 2 0 1 0 0 4v4H2v-4a2 2 0 1 0 0-4V5z"/><path d="M8 8v8M12 8v8M16 8v8"/>
-                    </svg>
-                    <h1>Kontrol Tiket Dirosa 9</h1>
-                </div>
-            </header>
+            <header class="app-header"><h1>Kontrol Tiket Dirosa 9</h1></header>
 
             <section id="login-section" class="card">
                 <h3>Verifikasi Petugas</h3>
                 <input type="text" id="input-pj" placeholder="Nama PJ" class="input-field">
-                <div class="pin-container" style="position: relative;">
+                <div style="position: relative;">
                     <input type="password" id="input-pin" placeholder="PIN Otorisasi" class="input-field">
                     <span id="toggle-pin" onclick="toggleVisibility()" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">👁️</span>
                 </div>
-                <button class="emerald-btn" onclick="handleLogin()">Login & Masuk</button>
+                <button class="emerald-btn" onclick="handleLogin()">Login</button>
             </section>
 
             <section id="dashboard-section" style="display:none;">
                 <div class="metrics-grid">
-                    <div class="card"><h3>Total Tiket</h3><p id="total">0</p></div>
+                    <div class="card"><h3>Total</h3><p id="total">0</p></div>
                     <div class="card"><h3>Terjual</h3><p id="terjual" class="status-terjual">0</p></div>
-                    <div class="card"><h3>Sisa Tiket</h3><p id="sisa" class="status-tersedia">0</p></div>
-                    <div class="card">
-                        <h3>Capaian</h3><p id="persentase">0%</p>
-                        <div class="progress-bg"><div id="progress-bar"></div></div>
-                    </div>
+                    <div class="card"><h3>Sisa</h3><p id="sisa" class="status-tersedia">0</p></div>
                 </div>
             </section>
         </main>
     </div>
 
     <script>
-        // URL Web App Anda
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwQby77Gz9DCO2qxFCaryQexSPcZiY0zjHvWW-VxyOKZ9Jhn1gKPDHExOp_XOVHRzp53w/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwt91vNNDBqssMWmWp2VkuCHsqVT1YQ2BzsgqDfdKRZpl2ecfsMyZ8nR8IrLr4Xt9JTKQ/exec";
 
         function toggleVisibility() {
             const p = document.getElementById('input-pin');
-            const t = document.getElementById('toggle-pin');
             p.type = (p.type === "password") ? "text" : "password";
-            t.innerText = (p.type === "text") ? "🙈" : "👁️";
         }
 
         async function handleLogin() {
-            const form = document.getElementById('login-section');
             const nama = document.getElementById('input-pj').value;
             const pin = document.getElementById('input-pin').value;
-            
-            // Mengirim request ke Google Apps Script
-            fetch(`${GAS_URL}?nama=${nama}&pin=${pin}`)
+            fetch(`${GAS_URL}?action=login&nama=${nama}&pin=${pin}`)
             .then(res => res.json())
             .then(res => {
-                if(res.authorized) {
+                if(res.status === "success") {
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('dashboard-section').style.display = 'block';
                 } else {
-                    form.classList.add('shake');
-                    setTimeout(() => form.classList.remove('shake'), 500);
-                    alert(res.message);
+                    document.getElementById('login-section').classList.add('shake');
+                    alert("Kredensial Salah");
                 }
-            })
-            .catch(err => alert("Terjadi kesalahan koneksi. Pastikan Web App diset ke 'Anyone'."));
+            });
         }
     </script>
 </body>
