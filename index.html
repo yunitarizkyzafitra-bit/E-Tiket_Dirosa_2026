@@ -2,69 +2,72 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Sistem Kontrol Tiket Dirosa 9</title>
+    <title>Monitoring Tiket MWD</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
-        /* CSS Terintegrasi untuk Tampilan Mewah & Responsif */
-        :root { --emerald: #064e3b; --gold: #d4af37; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; }
-        .sidebar { width: 260px; background: var(--emerald); color: white; height: 100vh; padding: 20px; text-align: center; }
-        .sidebar img { width: 80px; border-radius: 50%; }
-        .content { flex-grow: 1; padding: 40px; animation: fadeIn 0.8s ease; }
-        .card { background: white; padding: 25px; border-radius: 12px; border-top: 5px solid var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .input-field { width: 100%; max-width: 250px; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; display: block; }
-        .emerald-btn { padding: 10px 25px; background: var(--emerald); color: white; border: none; border-radius: 6px; cursor: pointer; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .status-terjual { color: #dc2626; font-weight: bold; }
-        .status-tersedia { color: #059669; font-weight: bold; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        :root { --emerald: #064e3b; --gold: #d4af37; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; display: flex; }
+        .sidebar { width: 250px; background: var(--emerald); color: white; height: 100vh; padding: 20px; }
+        .content { flex-grow: 1; padding: 30px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .emerald-btn { background: var(--emerald); color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <aside class="sidebar">
-        <img src="URL_LOGO_MWD.png" alt="MWD">
-        <h2>MWD</h2>
-        <nav>
-            <p onclick="window.location.reload()" style="cursor:pointer">📊 Dashboard</p>
-            <p onclick="window.print()" style="cursor:pointer">📄 Export PDF</p>
-        </nav>
-        <img src="URL_GAMBAR_TIKET.png" style="width:100%; max-width:150px; margin-top:20px;">
-    </aside>
-
+    <aside class="sidebar"><h2>MWD Control</h2><nav><p onclick="location.reload()">📊 Dashboard</p></nav></aside>
     <main class="content">
         <section id="login-section" class="card">
             <h3>Verifikasi Petugas</h3>
-            <input type="text" id="input-pj" class="input-field" placeholder="Nama PJ">
-            <input type="password" id="input-pin" class="input-field" placeholder="PIN (5 digit)">
-            <button class="emerald-btn" onclick="handleLogin()">Masuk Sistem</button>
+            <input type="text" id="input-pj" placeholder="Nama PJ">
+            <input type="password" id="input-pin" placeholder="PIN">
+            <button class="emerald-btn" onclick="handleLogin()">Login</button>
         </section>
 
         <section id="dashboard-section" style="display:none;">
-            <div class="metrics-grid">
-                <div class="card"><h3>Total</h3><p id="total">0</p></div>
-                <div class="card"><h3>Terjual</h3><p id="terjual" class="status-terjual">0</p></div>
-                <div class="card"><h3>Sisa</h3><p id="sisa" class="status-tersedia">0</p></div>
+            <div style="display:flex; gap:20px;">
+                <div class="card" style="width:30%"><h3>Sisa Tiket</h3><p id="sisa">0</p></div>
+                <div class="card" style="width:70%"><div id="chart_div" style="height:200px;"></div></div>
+            </div>
+            <div class="card">
+                <h3>Log Transaksi</h3>
+                <table id="logTable"><thead><tr><th>Waktu</th><th>PJ</th><th>Pembeli</th><th>Jumlah</th></tr></thead><tbody></tbody></table>
             </div>
         </section>
     </main>
 
     <script>
-        // Masukkan URL Web App Anda di bawah ini
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw_mweJkBIuDY2mNKvP2q0BSRxOUYNnETgqDBHn-ChYalDjaF_gBJvU-37Zt6ztz772Og/exec";
-
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxfxgk8boK-t8a5jYyFh58Is8Rc4Y8KqE8cerE_N_hGClluVmXT2rCQaNv_rwSC-4tR/exec";
+        
         async function handleLogin() {
             const nama = document.getElementById('input-pj').value;
             const pin = document.getElementById('input-pin').value;
-            
             fetch(`${GAS_URL}?action=login&nama=${nama}&pin=${pin}`)
             .then(res => res.json())
             .then(res => {
                 if(res.status === "success") {
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('dashboard-section').style.display = 'block';
-                } else {
-                    alert("Kredensial salah!");
-                }
+                    loadDashboard();
+                } else { alert("Kredensial Tidak Sesuai!"); }
+            });
+        }
+
+        async function loadDashboard() {
+            fetch(`${GAS_URL}?action=getData`)
+            .then(res => res.json())
+            .then(res => {
+                document.getElementById('sisa').innerText = res.sisa;
+                let tbody = document.querySelector("#logTable tbody");
+                res.data.forEach(row => {
+                    tbody.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[4]}</td></tr>`;
+                });
+                google.charts.load('current', {'packages':['corechart']});
+                google.charts.setOnLoadCallback(() => {
+                    var data = google.visualization.arrayToDataTable([['Status', 'Jumlah'],['Terjual', res.terjual],['Sisa', res.sisa]]);
+                    new google.visualization.PieChart(document.getElementById('chart_div')).draw(data, {title: 'Grafik Penjualan'});
+                });
             });
         }
     </script>
