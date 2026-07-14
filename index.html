@@ -5,55 +5,81 @@
     <title>Kontrol Tiket Dirosa 9</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --emerald: #064e3b; --gold: #d4af37; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 5px solid var(--gold); }
-        .chart-container { height: 350px; }
-        .btn-export { background: var(--gold); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        @media print { .btn-export, #login-box { display: none; } }
+        :root { --emerald: #008080; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; }
+        
+        /* Sidebar Styling */
+        .sidebar { width: 260px; background: var(--emerald); color: white; padding: 20px; }
+        
+        /* Main Content Styling */
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+        .stats-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .chart-wrapper { height: 300px; }
+        
+        @media print { .sidebar, #login-box, .btn-export { display: none !important; } }
     </style>
 </head>
 <body>
-    <div class="card">
-        <button class="btn-export" onclick="window.print()">📄 Export PDF</button>
-        <h2 style="color:var(--emerald)">Kontrol Tiket Tasyakuran Dirosa Angkatan 9</h2>
-        <div class="chart-container"><canvas id="myChart"></canvas></div>
+
+    <div class="sidebar">
+        <h2>MWD Admin</h2>
+        <p>Kontrol Tiket Dirosa 9</p>
     </div>
 
-    <div class="card" id="login-box">
-        <h3>Login Input (PJ)</h3>
-        <input id="user" placeholder="Nama PJ">
-        <input type="password" id="pin" placeholder="PIN">
-        <button onclick="login()">Masuk</button>
+    <div class="main-content">
+        <div class="card" style="margin-bottom:20px;">
+            <button onclick="window.print()" class="btn-export">📄 Export PDF</button>
+            <h1>Dashboard Monitoring</h1>
+        </div>
+
+        <div class="stats-container">
+            <div class="card"><h4>Total Tiket</h4><p>400</p></div>
+            <div class="card"><h4>Penjualan Hari Ini</h4><p id="harian">Memuat...</p></div>
+        </div>
+
+        <div class="card chart-wrapper">
+            <canvas id="myChart"></canvas>
+        </div>
+
+        <div id="login-box" class="card" style="margin-top:20px;">
+            <h3>Otorisasi Input</h3>
+            <input id="user" placeholder="Nama PJ">
+            <input type="password" id="pin" placeholder="PIN">
+            <button onclick="login()">Login</button>
+        </div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzvODAIxmX1yoEdvJXgP3WlPidwCYafNIl2OCiJ3JOrU0y0d7SurmeBFcsH0xK5sd6NsA/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwL7CZwvNZEmCiewFo0HXFSqLX7FUgKWI-fj5p3mTNc0RBXZeoRR3Fs4mHuaqRO0qpctQ/exec";
         
-        window.onload = loadData;
-
-        function loadData() {
-            google.script.run.withSuccessHandler(res => {
-                let ctx = document.getElementById('myChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(res.report),
-                        datasets: [
-                            { label: 'Tiket Terjual', data: Object.values(res.report), backgroundColor: '#064e3b' },
-                            { label: 'Tren', data: Object.values(res.report), type: 'line', borderColor: '#d4af37', fill: false }
-                        ]
-                    }
-                });
-            }).getDashboardData();
+        // Inisialisasi Grafik
+        function initChart(dataReport) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dataReport),
+                    datasets: [{ label: 'Tiket Terjual', data: Object.values(dataReport), backgroundColor: '#008080' }]
+                },
+                options: { maintainAspectRatio: false }
+            });
         }
+
+        // Panggil data saat halaman dimuat
+        window.onload = function() {
+            google.script.run.withSuccessHandler(res => {
+                initChart(res.report);
+                document.getElementById('harian').innerText = "Update Terakhir Berhasil";
+            }).getDashboardData();
+        };
 
         function login() {
             let u = document.getElementById('user').value;
             let p = document.getElementById('pin').value;
             google.script.run.withSuccessHandler(res => {
-                if(res) alert("Login Berhasil! Anda memiliki akses input.");
-                else alert("Kredensial salah.");
+                if(res) alert("Login Berhasil!");
+                else alert("Kredensial Salah.");
             }).verifyLogin(u, p);
         }
     </script>
