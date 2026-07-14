@@ -29,10 +29,10 @@
 
             <section id="login-section" class="card">
                 <h3>Verifikasi Petugas</h3>
-                <input type="text" id="input-pj" placeholder="Nama PJ">
+                <input type="text" id="input-pj" placeholder="Nama PJ" class="input-field">
                 <div class="pin-container" style="position: relative;">
-                    <input type="password" id="input-pin" placeholder="PIN Otorisasi">
-                    <span id="toggle-pin" onclick="toggleVisibility()" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">👁️</span>
+                    <input type="password" id="input-pin" placeholder="PIN Otorisasi" class="input-field">
+                    <span id="toggle-pin" onclick="toggleVisibility()" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">👁️</span>
                 </div>
                 <button class="emerald-btn" onclick="handleLogin()">Login & Masuk</button>
             </section>
@@ -52,6 +52,9 @@
     </div>
 
     <script>
+        // URL Web App Anda
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwQby77Gz9DCO2qxFCaryQexSPcZiY0zjHvWW-VxyOKZ9Jhn1gKPDHExOp_XOVHRzp53w/exec";
+
         function toggleVisibility() {
             const p = document.getElementById('input-pin');
             const t = document.getElementById('toggle-pin');
@@ -64,8 +67,10 @@
             const nama = document.getElementById('input-pj').value;
             const pin = document.getElementById('input-pin').value;
             
-            // "https://script.google.com/macros/s/AKfycbwQby77Gz9DCO2qxFCaryQexSPcZiY0zjHvWW-VxyOKZ9Jhn1gKPDHExOp_XOVHRzp53w/exec"
-            google.script.run.withSuccessHandler(res => {
+            // Mengirim request ke Google Apps Script
+            fetch(`${GAS_URL}?nama=${nama}&pin=${pin}`)
+            .then(res => res.json())
+            .then(res => {
                 if(res.authorized) {
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('dashboard-section').style.display = 'block';
@@ -74,7 +79,8 @@
                     setTimeout(() => form.classList.remove('shake'), 500);
                     alert(res.message);
                 }
-            }).verifyLogin(nama, pin);
+            })
+            .catch(err => alert("Terjadi kesalahan koneksi. Pastikan Web App diset ke 'Anyone'."));
         }
     </script>
 </body>
