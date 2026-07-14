@@ -2,49 +2,48 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kontrol Tiket Dirosa 9</title>
+    <title>Sistem Tiket Dirosa 9</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --emerald: #064e3b; --gold: #d4af37; }
-        body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn-export { background: var(--gold); color: white; border: none; padding: 10px; cursor: pointer; }
-        canvas { max-height: 300px; }
+        body { background: #f4f6f9; }
+        .wrapper { max-width: 900px; margin: auto; padding: 20px; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Dashboard Tiket Dirosa 9</h1>
-        <button class="btn-export" onclick="window.print()">Export PDF</button>
-    </div>
-
-    <div class="card">
-        <canvas id="myChart"></canvas>
+    <div class="wrapper">
+        <div class="card card-success card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Kontrol Tiket Tasyakuran Dirosa 9</h3>
+                <button class="btn btn-warning btn-sm float-right no-print" onclick="window.print()">Export PDF</button>
+            </div>
+            <div class="card-body">
+                <canvas id="myChart" style="height:300px;"></canvas>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Masukkan URL Web App (GAS) Anda di sini untuk menghubungkan ke Spreadsheet
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbz77FRmKZs1EMd46O_B7-2UIuO43Ecxado2Btrjewt9fjhS5rIkhohp8WROD3QyGzzRYw/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxAXmlq0gZRmIs9Wz8bNcWZrf9ppiXNB9enJ0OVkN_yuwC7AtOPSIwrJ_h4YvmnBPS8ag/exec";
 
-        async function fetchData() {
-            // Mengambil data dari Google Sheets via GAS
-            const response = await fetch(GAS_URL);
-            const data = await response.json();
-            renderChart(data);
-        }
+        async function loadDashboard() {
+            const res = await fetch(GAS_URL);
+            const data = await res.json();
+            
+            // Hitung data (Status di kolom D = index 3)
+            let terjual = data.filter(r => r[3] === 'Terjual').length;
+            let tersedia = data.filter(r => r[3] === 'Tersedia').length;
 
-        function renderChart(data) {
-            const ctx = document.getElementById('myChart').getContext('2d');
-            new Chart(ctx, {
+            new Chart(document.getElementById('myChart'), {
                 type: 'bar',
                 data: {
                     labels: ['Terjual', 'Tersedia'],
-                    datasets: [{ label: 'Jumlah Tiket', data: [data.terjual, data.tersedia], backgroundColor: '#064e3b' }]
+                    datasets: [{ label: 'Jumlah Tiket', data: [terjual, tersedia], backgroundColor: ['#dc3545', '#28a745'] }]
                 }
             });
         }
-
-        window.onload = fetchData;
+        window.onload = loadDashboard;
     </script>
 </body>
 </html>
