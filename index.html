@@ -2,48 +2,92 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Sistem Tiket Dirosa 9</title>
+    <title>Sistem Kontrol Tiket Dirosa 9</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #f4f6f9; }
-        .wrapper { max-width: 900px; margin: auto; padding: 20px; }
-        @media print { .no-print { display: none; } }
+        :root { --emerald: #064e3b; }
+        .sidebar-dark-emerald { background-color: var(--emerald) !important; }
+        .ticket-box { padding: 5px; text-align: center; border-radius: 3px; color: white; font-weight: bold; font-size: 10px; border: 1px solid white; }
+        .bg-hijau { background-color: #10b981; } .bg-merah { background-color: #ef4444; }
+        .print-only { display: none; }
+        @media print { .no-print { display: none !important; } .print-only { display: block !important; } }
     </style>
 </head>
-<body>
+<body class="layout-fixed">
     <div class="wrapper">
-        <div class="card card-success card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Kontrol Tiket Tasyakuran Dirosa 9</h3>
-                <button class="btn btn-warning btn-sm float-right no-print" onclick="window.print()">Export PDF</button>
+        <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
+            <a href="#" class="brand-link text-white"><span class="brand-text font-weight-bold ml-2">Dirosa 9</span></a>
+            <div class="sidebar"><nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link text-white">Dashboard</a></li></ul></nav></div>
+        </aside>
+
+        <div class="content-wrapper p-4">
+            <div class="print-only text-center"><h1>LAPORAN TASYAKURAN DIROSA 9</h1><hr></div>
+            
+            <div class="row">
+                <div class="col-md-5"><div class="card p-3"><canvas id="myChart"></canvas></div></div>
+                <div class="col-md-7 card p-3">
+                    <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()">Export PDF Profesional</button>
+                    <h5>Input Data Baru</h5>
+                    <div class="row">
+                        <div class="col-md-6"><input type="number" id="no" class="form-control" placeholder="No Tiket"></div>
+                        <div class="col-md-6"><input type="date" id="tgl" class="form-control"></div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <select id="pj" class="form-control">
+                                <option value="Ummu Nabila">Ummu Nabila</option><option value="Teteh Lilis">Teteh Lilis</option>
+                                <option value="Ummu Yasmin">Ummu Yasmin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="target" class="form-control">
+                                <option value="Pengurus">Pengurus</option><option value="Dirosa dan Mudarrisah">Dirosa dan Mudarrisah</option>
+                                <option value="Umum">Umum</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <select id="status" class="form-control"><option value="Tersedia">Tersedia</option><option value="Terjual">Terjual</option></select>
+                        </div>
+                        <div class="col-md-6"><input type="text" id="hp" class="form-control" placeholder="Nomor HP"></div>
+                    </div>
+                    <input type="text" id="ket" class="form-control mt-2" placeholder="Keterangan">
+                    <button class="btn btn-success mt-3" onclick="save()">Simpan Data</button>
+                </div>
             </div>
-            <div class="card-body">
-                <canvas id="myChart" style="height:300px;"></canvas>
+
+            <div class="card p-3">
+                <h5>Grid Status Tiket (Total 450)</h5>
+                <div id="grid" style="display:grid; grid-template-columns: repeat(25, 1fr); gap: 2px;"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "hhttps://script.google.com/macros/s/AKfycbzsJpOP10I-BtZh43RnXpGe6k60gx5FM8vnEVvn-RPxC3ruNB7EymTBGK2Ag9CBgdG97g/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxzHAuXv4hjOM_TQbJekb2u0027Z_1k3_YNUzzGncSWPbYRuyeSfF1h9lOvqwd3F9ov4w/exec";
 
-        async function loadDashboard() {
+        async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
+            let sold = data.filter(r => r[4] === 'Terjual').length;
             
-            // Hitung data (Status di kolom D = index 3)
-            let terjual = data.filter(r => r[3] === 'Terjual').length;
-            let tersedia = data.filter(r => r[3] === 'Tersedia').length;
+            new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
 
-            new Chart(document.getElementById('myChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['Terjual', 'Tersedia'],
-                    datasets: [{ label: 'Jumlah Tiket', data: [terjual, tersedia], backgroundColor: ['#dc3545', '#28a745'] }]
-                }
-            });
+            const grid = document.getElementById('grid');
+            for(let i=1; i<=450; i++) {
+                let status = (data.find(r => r[0] == i) || [])[4];
+                grid.innerHTML += `<div class="ticket-box ${status == 'Terjual' ? 'bg-merah' : 'bg-hijau'}">${i}</div>`;
+            }
         }
-        window.onload = loadDashboard;
+
+        async function save() {
+            let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, target: document.getElementById('target').value, status: document.getElementById('status').value, hp: document.getElementById('hp').value, ket: document.getElementById('ket').value };
+            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
+            alert("Tersimpan!"); location.reload();
+        }
+        window.onload = init;
     </script>
 </body>
 </html>
