@@ -15,19 +15,16 @@
         .bg-hijau { background-color: #10b981; } .bg-merah { background-color: #ef4444; }
         #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); gap: 3px; }
         .no-print { display: none; }
-        #input-panel { display: none; }
-        @media print { .no-print { display: none !important; } }
-        @media (max-width: 768px) { .content-wrapper { padding: 10px !important; } }
+        #input-panel { display: none; margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
+        @media print { .no-print, .main-sidebar { display: none !important; } .content-wrapper { margin-left: 0 !important; } }
     </style>
 </head>
-<body class="layout-fixed">
+<body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-        <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
-            <div class="brand-link text-center border-bottom">
-                <span class="brand-text font-weight-bold text-white" style="font-size: 13px;">Kontrol Penjualan Tiket Tasyakuran Angk.9</span>
-            </div>
+        <aside class="main-sidebar sidebar-dark-emerald elevation-4">
+            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold">Dirosa Angkatan 9</span></div>
             <div class="sidebar">
-                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
+                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
                 <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
                     <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
@@ -37,61 +34,38 @@
 
         <div class="content-wrapper p-4">
             <div class="row">
-                <div class="col-12 col-md-5">
+                <div class="col-md-5">
                     <div class="card p-3"><canvas id="myChart"></canvas></div>
+                    <div class="card p-3 text-center"><h6>Total Progres Penjualan</h6><h2 id="total-percent">0%</h2></div>
                 </div>
-                <div class="col-12 col-md-7 card p-3">
-                    <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
-                    <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
-                    <div id="input-panel">
-                        <h5>Input Tiket (Validasi PJ)</h5>
-                        <input type="text" id="no" class="form-control" placeholder="No Tiket">
-                        <input type="date" id="tgl" class="form-control mt-2">
-                        <select id="pj" class="form-control mt-2">
-                            <option value="Ummu Nabila">Ummu Nabila</option>
-                            <option value="Teteh Lilis">Teteh Lilis</option>
-                            <option value="Ummu Yasmin">Ummu Yasmin</option>
-                            <option value="Cadangan">Cadangan</option>
-                        </select>
-                        <input type="text" id="hp" class="form-control mt-2" placeholder="Nomor HP">
-                        <input type="text" id="alamat" class="form-control mt-2" placeholder="Alamat">
-                        <div class="mt-3"><button class="btn btn-success" onclick="save()">Simpan Data</button> <button class="btn btn-secondary" onclick="closeInput()">Kembali</button></div>
+                <div class="col-md-7">
+                    <div class="card p-3">
+                        <button class="btn btn-warning btn-sm mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                        <button class="btn btn-primary btn-sm mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
+                        <div id="input-panel">
+                            <h5>Input Data Tiket</h5>
+                            <input type="text" id="no" class="form-control" placeholder="No Tiket">
+                            <input type="date" id="tgl" class="form-control mt-2">
+                            <select id="pj" class="form-control mt-2"><option>Ummu Nabila</option><option>Teteh Lilis</option><option>Ummu Yasmin</option><option>Cadangan</option></select>
+                            <input type="text" id="hp" class="form-control mt-2" placeholder="Nomor HP">
+                            <input type="text" id="alamat" class="form-control mt-2" placeholder="Alamat">
+                            <div class="mt-3"><button class="btn btn-success" onclick="save()">Simpan</button> <button class="btn btn-secondary" onclick="closeInput()">Kembali</button></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card p-3 mt-3"><h5>Grid Tiket</h5><div id="grid"></div></div>
+            <div class="card p-3"><h5>Grid Tiket</h5><div id="grid"></div></div>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzqd4mvnse9Zgd9CbiTJnws9a2iaGpuTcMrbH2rq6IXerE2csPy8J9MUkl7yyzVhyGdXA/exec";
-        
-        const pjRules = {
-            "Ummu Nabila": [1, 100],
-            "Teteh Lilis": [101, 200],
-            "Ummu Yasmin": [201, 350],
-            "Cadangan": [351, 450]
-        };
-
-        async function save() {
-            let pj = document.getElementById('pj').value;
-            let no = parseInt(document.getElementById('no').value);
-            
-            // Validasi Ketat PJ
-            if (no < pjRules[pj][0] || no > pjRules[pj][1]) {
-                alert("Bukan PJ nomor tiket ini!");
-                return;
-            }
-
-            let p = { no, tgl: document.getElementById('tgl').value, pj, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
-            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
-            alert("Data Tersimpan!"); document.getElementById('no').value = ''; init();
-        }
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwOCFL5cLVPTZPn8chGXCv_7J2T3o88FXoBVW6Iu1k6qIzSWOvskIdtoCIPht51i-UIsQ/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
             let sold = data.filter(r => r[4] === 'Terjual').length;
+            document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
             
             const grid = document.getElementById('grid'); grid.innerHTML = "";
@@ -111,6 +85,12 @@
             else alert("Akses Ditolak");
         }
 
+        async function save() {
+            let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
+            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
+            alert("Tersimpan!"); document.getElementById('no').value = ''; init();
+        }
+        
         function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
         window.onload = init;
     </script>
