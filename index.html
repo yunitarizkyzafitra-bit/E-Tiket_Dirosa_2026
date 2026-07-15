@@ -75,7 +75,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby4xDLDf9DZMX4xIWYW3VCY9FPClFQsbm4KIjOJOmzmFncusO70ep2CGHx8N0zXjd51PQ/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbylE6pT6n28sQtcI65e4Flzp0-rcL6kbYGBOQl5NDNVsaCX4fg5qBASJA4B7SfqcxAqKQ/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
@@ -131,7 +131,10 @@
         async function save() {
             let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, target: document.getElementById('target').value, status: document.getElementById('status').value, hp: document.getElementById('hp').value, ket: "Manual", alamat: document.getElementById('alamat').value };
             await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
-            alert("Tersimpan!"); init();
+            alert("Data Tersimpan!");
+            // Reset Form otomatis setelah simpan
+            document.getElementById('no').value = ''; document.getElementById('hp').value = ''; document.getElementById('alamat').value = '';
+            init();
         }
         window.onload = init;
     </script>
