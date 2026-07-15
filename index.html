@@ -85,14 +85,21 @@
             }
         }
 
-        function showAuth() {
-            let user = prompt("Masukkan Username:");
-            let pin = prompt("Masukkan PIN:");
-            google.script.run.withSuccessHandler(res => {
-                if(res) { document.getElementById('input-panel').style.display = 'block'; }
-                else { alert("Akses Ditolak"); }
-            }).verifyLogin(user, pin);
-        }
+        async function showAuth() {
+    let user = prompt("Masukkan Username:");
+    let pin = prompt("Masukkan PIN:");
+    
+    // Memanggil Google Apps Script via API
+    const response = await fetch(`${GAS_URL}?action=login&user=${user}&pin=${pin}`);
+    const result = await response.json();
+    
+    if (result.status) {
+        document.getElementById('input-panel').style.display = 'block';
+        alert("Akses diberikan.");
+    } else {
+        alert("Username atau PIN salah.");
+    }
+}
 
         async function save() {
             let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, target: document.getElementById('target').value, status: document.getElementById('status').value, hp: document.getElementById('hp').value, ket: document.getElementById('ket').value };
