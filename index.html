@@ -45,7 +45,8 @@
                     <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
                     <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                     <div id="input-panel">
-                        <h5>Input Tiket (Login: <span id="pj-logged"></span>)</h5>
+                        <h5>Input Tiket (PJ: <span id="pj-logged"></span>)</h5>
+                        <p class="text-muted small" id="session-counter"></p>
                         <input type="text" id="no" class="form-control" placeholder="No Tiket/Rentang">
                         <input type="date" id="tgl" class="form-control mt-2">
                         <input type="hidden" id="pj">
@@ -71,7 +72,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyNPS3KqdI9NJb8QsG84zmRV_Y1o2tgwfiuH-MsfVxldnNerZABSxHo14oIR8d-ot0w/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyrpBjBFSh6Kxn-k0Feu-IYTiFZbEFS3WEGxhXLzOZ6kv3Bd6jl5ALlwNL0r7sYPzwPMw/exec";
         const zonaPJ = {"Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450]};
         let inputCount = 0, isSaving = false;
 
@@ -80,15 +81,17 @@
             const res = await fetch(`${GAS_URL}?action=login&user=${u}&pin=${p}`);
             const data = await res.json();
             if(data.status) {
-                if(isEdit) alert("Edit mode: Tiket #" + n);
-                else {
-                    inputCount = 0;
-                    document.getElementById('pj').value = data.pj;
-                    document.getElementById('pj-logged').innerText = data.pj;
-                    document.getElementById('input-panel').style.display = 'block';
-                    if(n) document.getElementById('no').value = n;
-                }
+                inputCount = 0; // Reset counter saat login baru
+                document.getElementById('pj').value = data.pj;
+                document.getElementById('pj-logged').innerText = data.pj;
+                updateCounterDisplay();
+                document.getElementById('input-panel').style.display = 'block';
+                if(n) document.getElementById('no').value = n;
             } else alert("Akses Ditolak/PIN Salah");
+        }
+
+        function updateCounterDisplay() {
+            document.getElementById('session-counter').innerText = "Sisa input sesi ini: " + (10 - inputCount) + "/10";
         }
 
         async function save() {
@@ -105,13 +108,20 @@
             for (let i = start; i <= end; i++) {
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ no: i, tgl: document.getElementById('tgl').value, pj, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value }) });
             }
-            inputCount++; alert("Data Tersimpan!");
-            location.reload();
+            
+            inputCount++;
+            if (inputCount >= 10) {
+                alert("Batas 10 input tercapai. Sesi ditutup.");
+                location.reload();
+            } else {
+                alert("Tersimpan. (Input ke-" + inputCount + "/10)");
+                updateCounterDisplay();
+                isSaving = false;
+            }
         }
 
         async function init() {
             const res = await fetch(GAS_URL); const data = await res.json();
-            // Update Grafik & Grid
             let sold = data.filter(r => r[4] === 'Terjual').length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
@@ -119,9 +129,9 @@
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             const tbody = document.getElementById('transaksi-body'); tbody.innerHTML = "";
             
-            data.forEach(r => {
+            data.slice().reverse().forEach(r => {
                 let tr = `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td></tr>`;
-                tbody.insertAdjacentHTML('afterbegin', tr);
+                tbody.insertAdjacentHTML('beforeend', tr);
             });
 
             for(let i=1; i<=450; i++) {
