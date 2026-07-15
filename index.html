@@ -49,19 +49,29 @@
                         <input type="text" id="no" class="form-control" placeholder="No Tiket/Rentang">
                         <input type="date" id="tgl" class="form-control mt-2">
                         <input type="hidden" id="pj">
-                        <select id="status" class="form-control mt-2" disabled><option>Terjual</option></select>
                         <input type="text" id="hp" class="form-control mt-2" placeholder="Nomor HP">
                         <input type="text" id="alamat" class="form-control mt-2" placeholder="Alamat">
                         <div class="mt-3"><button class="btn btn-success" id="save-btn" onclick="save()">Simpan</button> <button class="btn btn-secondary" onclick="closeInput()">Kembali</button></div>
                     </div>
                 </div>
             </div>
+            
             <div class="card p-3 mt-3"><h5>Grid Tiket</h5><div id="grid"></div></div>
+            
+            <div class="card p-3 mt-3">
+                <h5>Riwayat Transaksi</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead><tr><th>No</th><th>PJ</th><th>HP</th></tr></thead>
+                        <tbody id="transaksi-body"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzzNHuT0DgsNNhpPwVYmokU1j7wfk_-AjHe0MFMsMB6FHJvViCHEYdieKIgYjUD4kxj3A/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyNPS3KqdI9NJb8QsG84zmRV_Y1o2tgwfiuH-MsfVxldnNerZABSxHo14oIR8d-ot0w/exec";
         const zonaPJ = {"Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450]};
         let inputCount = 0, isSaving = false;
 
@@ -70,7 +80,7 @@
             const res = await fetch(`${GAS_URL}?action=login&user=${u}&pin=${p}`);
             const data = await res.json();
             if(data.status) {
-                if(isEdit) alert("Verifikasi PIN berhasil. Anda berada di mode Edit Tiket #" + n);
+                if(isEdit) alert("Edit mode: Tiket #" + n);
                 else {
                     inputCount = 0;
                     document.getElementById('pj').value = data.pj;
@@ -95,16 +105,25 @@
             for (let i = start; i <= end; i++) {
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ no: i, tgl: document.getElementById('tgl').value, pj, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value }) });
             }
-            inputCount++; alert("Data Tersimpan (Sesi " + inputCount + "/10)");
+            inputCount++; alert("Data Tersimpan!");
             location.reload();
         }
 
         async function init() {
             const res = await fetch(GAS_URL); const data = await res.json();
+            // Update Grafik & Grid
             let sold = data.filter(r => r[4] === 'Terjual').length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
+            
             const grid = document.getElementById('grid'); grid.innerHTML = "";
+            const tbody = document.getElementById('transaksi-body'); tbody.innerHTML = "";
+            
+            data.forEach(r => {
+                let tr = `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td></tr>`;
+                tbody.insertAdjacentHTML('afterbegin', tr);
+            });
+
             for(let i=1; i<=450; i++) {
                 let rec = data.find(r => r[0] == i);
                 let div = document.createElement('div');
