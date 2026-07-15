@@ -74,21 +74,50 @@
                             <div class="col-md-6"><select id="status" class="form-control"><option value="Tersedia">Tersedia</option><option value="Terjual">Terjual</option></select></div>
                             <div class="col-md-6"><input type="text" id="hp" class="form-control" placeholder="Nomor HP"></div>
                         </div>
-                        <input type="text" id="ket" class="form-control mt-2" placeholder="Keterangan">
-                        <button class="btn btn-success mt-3" onclick="save()">Simpan Data</button>
-                    </div>
-                </div>
-            </div>
+                        <input type="text" id="alamat" class="form-control mt-2" placeholder="Alamat Lengkap">
 
-            <div class="card p-3">
-                <h5>Grid Status Tiket (Total 450)</h5>
-                <div id="grid" style="display:grid; grid-template-columns: repeat(25, 1fr); gap: 2px;"></div>
-            </div>
-        </div>
-    </div>
+<div class="card p-3 mt-4">
+    <h5>Daftar Pembeli Tiket</h5>
+    <table class="table table-striped">
+        <thead><tr><th>No</th><th>PJ</th><th>Status</th><th>Alamat</th></tr></thead>
+        <tbody id="buyer-table-body"></tbody>
+    </table>
+</div>
 
-    <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw3T4D5fOYF-ksBkkrh6Mgv-iqVy8YqLwBoBfL3K8cslf8PfGn3EGhpFyMLgzhUMUy6tg/exec";
+<script>
+    // Perbarui fungsi init() untuk mengisi tabel
+    async function init() {
+        const res = await fetch(GAS_URL);
+        const data = await res.json();
+        
+        // 1. Rendering Chart & Grid (tetap seperti semula)
+        // ... (kode chart dan grid Anda)
+
+        // 2. Rendering Tabel Pembeli
+        const tbody = document.getElementById('buyer-table-body');
+        tbody.innerHTML = "";
+        data.filter(r => r[4] === 'Terjual').forEach(r => {
+            tbody.innerHTML += `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${r[4]}</td><td>${r[7] || '-'}</td></tr>`;
+        });
+    }
+
+    // Perbarui fungsi save()
+    async function save() {
+        let p = { 
+            no: document.getElementById('no').value, 
+            tgl: document.getElementById('tgl').value, 
+            pj: document.getElementById('pj').value, 
+            target: document.getElementById('target').value, 
+            status: document.getElementById('status').value, 
+            hp: document.getElementById('hp').value, 
+            ket: document.getElementById('ket').value,
+            alamat: document.getElementById('alamat').value // Input baru
+        };
+        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
+        alert("Data tersimpan!"); location.reload();
+    }
+</script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwYR-okEx18_jMGBr7fNWbfhMnK8vYV7dsbDqNTm9_lVwU9R_FDq6yBGZX-l0JcKwkN_A/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
@@ -96,33 +125,47 @@
             let sold = data.filter(r => r[4] === 'Terjual').length;
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
             const grid = document.getElementById('grid');
-            for(let i=1; i<=450; i++) {
-                let status = (data.find(r => r[0] == i) || [])[4];
-                grid.innerHTML += `<div class="ticket-box ${status == 'Terjual' ? 'bg-merah' : 'bg-hijau'}">${i}</div>`;
+            for(let i = 1; i <= 450; i++) {
+    let rowData = data.find(r => r[0] == i);
+    let status = rowData ? rowData[4] : "Tersedia";
+    
+    let div = document.createElement('div');
+    div.className = `ticket-box ${status == 'Terjual' ? 'bg-merah' : 'bg-hijau'}`;
+    div.innerText = i;
+    div.style.cursor = "pointer"; // Memberikan indikasi bahwa bisa diklik
+    
+    // Logika Klik untuk input instan
+    div.onclick = function() {
+        if(status === 'Terjual') {
+            alert("Tiket nomor " + i + " sudah terjual.");
+        } else {
+            if(confirm("Apakah Anda ingin menandai tiket " + i + " sebagai Terjual?")) {
+                quickSave(i);
             }
         }
-
-        async function showAuth() {
-    let user = prompt("Masukkan Username:");
-    let pin = prompt("Masukkan PIN:");
-    
-    // Memanggil Google Apps Script via API
-    const response = await fetch(`${GAS_URL}?action=login&user=${user}&pin=${pin}`);
-    const result = await response.json();
-    
-    if (result.status) {
-        document.getElementById('input-panel').style.display = 'block';
-        alert("Akses diberikan.");
-    } else {
-        alert("Username atau PIN salah.");
-    }
+    };
+    grid.appendChild(div);
 }
 
-        async function save() {
-            let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, target: document.getElementById('target').value, status: document.getElementById('status').value, hp: document.getElementById('hp').value, ket: document.getElementById('ket').value };
-            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
-            alert("Tersimpan!"); location.reload();
-        }
+        async function quickSave(nomorTiket) {
+    let p = { 
+        no: nomorTiket, 
+        tgl: new Date().toISOString().split('T')[0], // Otomatis tanggal hari ini
+        pj: "Admin", // Default PJ
+        target: "Umum", // Default Target
+        status: "Terjual", 
+        ket: "Input Instan", 
+        hp: "-", 
+        alamat: "-" 
+    };
+    
+    await fetch(GAS_URL, { 
+        method: 'POST', 
+        body: JSON.stringify(p) 
+    });
+    alert("Tiket " + nomorTiket + " berhasil terjual!");
+    location.reload(); // Refresh untuk update warna grid
+}
         window.onload = init;
     </script>
 </body>
