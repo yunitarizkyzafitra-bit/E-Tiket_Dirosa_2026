@@ -74,7 +74,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzv_8FJGjiOK-ghEv3_LtIOzq9JtcllvG1WvGDMGC8-VkuUOJW4hUd-egx93KSeXNhM7g/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx9kAzGEhw8f2E7ZVS5VamZvMfOwHyqBQZgjh1WkFXZq98NWcjsIPgW9pKCOtIDfWVHTg/exec";
         const zonaPJ = {"Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450]};
         let inputCount = 0, isSaving = false;
 
@@ -125,6 +125,7 @@
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             const tbody = document.getElementById('transaksi-body'); tbody.innerHTML = "";
             
+            // Urutkan data berdasarkan input terbaru dan tampilkan kolom Tgl
             data.slice().reverse().forEach(r => {
                 let tr = `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`;
                 tbody.insertAdjacentHTML('beforeend', tr);
