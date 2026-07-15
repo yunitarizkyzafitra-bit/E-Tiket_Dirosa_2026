@@ -23,10 +23,16 @@
 <body class="layout-fixed">
     <div class="wrapper">
         <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
-            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white">Dirosa Angkatan 9</span></div>
+            <div class="brand-link text-center border-bottom">
+                <span class="brand-text font-weight-bold text-white" style="font-size: 13px; display: block; white-space: normal; line-height: 1.2;">Kontrol Penjualan Tiket Tasyakuran Angk.9</span>
+            </div>
             <div class="sidebar">
                 <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
+                <!-- Gambar Tiket Kembali di Posisi Bawah -->
+                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
+                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
+                </div>
             </div>
         </aside>
 
@@ -34,9 +40,10 @@
             <div class="row">
                 <div class="col-md-5">
                     <div class="card p-3"><canvas id="myChart"></canvas></div>
-                    <div class="card p-3 mt-2">
-                        <h6>Performa Penjualan Per-Pekan</h6>
-                        <div id="weekly-stats"></div>
+                    <div class="card p-3 mt-2 text-center">
+                        <h6>Total Progres Penjualan</h6>
+                        <h2 id="total-percent">0%</h2>
+                        <small>Dari 450 Tiket Tersedia</small>
                     </div>
                 </div>
                 <div class="col-md-7 card p-3">
@@ -59,33 +66,21 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxer4zw2ckbLHlFI8GZ1tHjMhRUuUuHdA5EC_496s_KsGVW8YWWkxZV1PZg90HaPy-Ikw/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzGOr0iaPUXWQ1I_5Q7LTPpXTbzBncLZGmWXtRKLEOtWd8XWttc6G7xxmCNHDK1xKMkmQ/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
             
-            // 1. Grafik Donat
+            // Logika persentase total (Real-time)
             let sold = data.filter(r => r[4] === 'Terjual').length;
+            let percent = ((sold / 450) * 100).toFixed(1);
+            document.getElementById('total-percent').innerText = percent + "%";
+
+            // Grafik Donat
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
             
-            // 2. Statistik Pekanan (Logic: Grouping by Week Number)
-            const weekly = {};
-            data.filter(r => r[4] === 'Terjual').forEach(r => {
-                let date = new Date(r[1]);
-                let week = Math.ceil((((date - new Date(date.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
-                let key = "Pekan " + week;
-                weekly[key] = (weekly[key] || 0) + 1;
-            });
-
-            const statBox = document.getElementById('weekly-stats');
-            statBox.innerHTML = "";
-            for (let w in weekly) {
-                let percent = ((weekly[w] / 450) * 100).toFixed(1);
-                statBox.innerHTML += `<div class="mb-2"><b>${w}:</b> ${weekly[w]} Tiket (${percent}%)</div>`;
-            }
-
-            // 3. Grid
+            // Grid
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             for(let i=1; i<=450; i++) {
                 let status = data.find(r => r[0] == i) ? 'bg-merah' : 'bg-hijau';
