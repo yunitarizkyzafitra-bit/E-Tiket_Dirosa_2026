@@ -17,15 +17,13 @@
         @media print {
             .print-only { display: block !important; }
             .no-print { display: none !important; }
-            .bg-merah { background-color: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .bg-hijau { background-color: #10b981 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body class="layout-fixed">
     <div class="wrapper">
         <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
-            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white" style="font-size: 14px;">Kontrol Tiket Tasyakuran Dirosa Angkatan 9</span></div>
+            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white">Dirosa Angkatan 9</span></div>
             <div class="sidebar">
                 <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
@@ -37,13 +35,13 @@
                 <div class="col-md-5">
                     <div class="card p-3"><canvas id="myChart"></canvas></div>
                     <div class="card p-3 mt-2">
-                        <h6>Penjualan Per Hari (Terakhir 5 Hari)</h6>
-                        <ul id="daily-stats" class="list-unstyled"></ul>
+                        <h6>Performa Penjualan Per-Pekan</h6>
+                        <div id="weekly-stats"></div>
                     </div>
                 </div>
                 <div class="col-md-7 card p-3">
                     <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
-                    <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Login Input Data</button>
+                    <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                     <div id="input-panel">
                         <h5>Input Tiket (Contoh: 10-15)</h5>
                         <input type="text" id="no" class="form-control" placeholder="No Tiket/Rentang">
@@ -61,7 +59,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwEuubyIHG8CvWfYkAZs2zQSc4T1mXPFb4OSZkiZnKA8qqTMk_upvNyk9sPqx7SqPooCg/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxer4zw2ckbLHlFI8GZ1tHjMhRUuUuHdA5EC_496s_KsGVW8YWWkxZV1PZg90HaPy-Ikw/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
@@ -71,11 +69,21 @@
             let sold = data.filter(r => r[4] === 'Terjual').length;
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
             
-            // 2. Statistik Per Hari
-            let daily = {};
-            data.forEach(r => { if(r[4] === 'Terjual') daily[r[1]] = (daily[r[1]] || 0) + 1; });
-            const dailyList = document.getElementById('daily-stats'); dailyList.innerHTML = "";
-            Object.keys(daily).slice(-5).forEach(d => { dailyList.innerHTML += `<li><b>${d}:</b> ${daily[d]} Tiket</li>`; });
+            // 2. Statistik Pekanan (Logic: Grouping by Week Number)
+            const weekly = {};
+            data.filter(r => r[4] === 'Terjual').forEach(r => {
+                let date = new Date(r[1]);
+                let week = Math.ceil((((date - new Date(date.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
+                let key = "Pekan " + week;
+                weekly[key] = (weekly[key] || 0) + 1;
+            });
+
+            const statBox = document.getElementById('weekly-stats');
+            statBox.innerHTML = "";
+            for (let w in weekly) {
+                let percent = ((weekly[w] / 450) * 100).toFixed(1);
+                statBox.innerHTML += `<div class="mb-2"><b>${w}:</b> ${weekly[w]} Tiket (${percent}%)</div>`;
+            }
 
             // 3. Grid
             const grid = document.getElementById('grid'); grid.innerHTML = "";
