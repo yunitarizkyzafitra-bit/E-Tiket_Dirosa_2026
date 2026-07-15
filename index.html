@@ -2,7 +2,6 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <!-- Meta tag wajib agar aplikasi responsif di Android/iPhone/PC -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistem Kontrol Tiket Dirosa Angkatan 9</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
@@ -12,37 +11,21 @@
         :root { --emerald: #064e3b; }
         .sidebar-dark-emerald { background-color: var(--emerald) !important; }
         .nav-link.active { background-color: #047857 !important; color: #fff !important; }
-        
-        /* Optimasi Grid agar menyesuaikan layar mobile/PC */
         .ticket-box { padding: 5px; text-align: center; border-radius: 3px; color: white; font-weight: bold; font-size: 10px; border: 1px solid white; cursor: pointer; }
         .bg-hijau { background-color: #10b981; } .bg-merah { background-color: #ef4444; }
-        
         #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); gap: 3px; }
-        
-        .print-only { display: none; }
+        .no-print { display: none; }
         #input-panel { display: none; }
-        
-        @media print {
-            .print-only { display: block !important; }
-            .no-print { display: none !important; }
-        }
-        
-        /* Fix padding mobile */
-        @media (max-width: 768px) { .content-wrapper { padding: 10px !important; } }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body class="layout-fixed">
     <div class="wrapper">
         <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
-            <div class="brand-link text-center border-bottom">
-                <span class="brand-text font-weight-bold text-white" style="font-size: 13px; display: block; white-space: normal; line-height: 1.2;">Kontrol Penjualan Tiket Tasyakuran Angk.9</span>
-            </div>
+            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white">Kontrol Tiket Dirosa Angk.9</span></div>
             <div class="sidebar">
                 <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
-                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
-                </div>
             </div>
         </aside>
 
@@ -50,23 +33,17 @@
             <div class="row">
                 <div class="col-12 col-md-5">
                     <div class="card p-3"><canvas id="myChart"></canvas></div>
-                    <div class="card p-3 mt-2 text-center">
-                        <h6>Total Progres Penjualan</h6>
-                        <h2 id="total-percent">0%</h2>
-                    </div>
+                    <div class="card p-3 mt-2 text-center"><h6>Total Progres Penjualan</h6><h2 id="total-percent">0%</h2></div>
                 </div>
                 <div class="col-12 col-md-7 card p-3">
-                    <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
                     <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                     <div id="input-panel">
-                        <h5>Input Tiket (Contoh: 10-15)</h5>
-                        <input type="text" id="no" class="form-control" placeholder="No Tiket/Rentang">
-                        <input type="date" id="tgl" class="form-control mt-2">
-                        <select id="pj" class="form-control mt-2"><option>Ummu Nabila</option><option>Teteh Lilis</option><option>Ummu Yasmin</option></select>
-                        <select id="status" class="form-control mt-2"><option>Terjual</option></select>
+                        <h5>Input Tiket (Sesuai Wilayah PJ)</h5>
+                        <input type="text" id="no" class="form-control" placeholder="No Tiket">
+                        <select id="pj" class="form-control mt-2"><option value="Ummu Nabila">Ummu Nabila</option><option value="Teteh Lilis">Teteh Lilis</option><option value="Ummu Yasmin">Ummu Yasmin</option><option value="Cadangan">Cadangan</option></select>
                         <input type="text" id="hp" class="form-control mt-2" placeholder="Nomor HP">
                         <input type="text" id="alamat" class="form-control mt-2" placeholder="Alamat">
-                        <div class="mt-3"><button class="btn btn-success" onclick="save()">Simpan</button> <button class="btn btn-secondary" onclick="closeInput()">Kembali</button></div>
+                        <div class="mt-3"><button class="btn btn-success" onclick="save()">Simpan Data</button> <button class="btn btn-secondary" onclick="closeInput()">Kembali</button></div>
                     </div>
                 </div>
             </div>
@@ -75,7 +52,32 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbye3B7Sa85b8mAiNNz8U7tUMYJ75geouTIcFmTfqd3RslKqo095-GvHqnSEpE2K_LgMAA/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz37dUuCZLysN17mPFzY8vnM_uLxpir7P1ye792wHwWaEOpw5iYlyqjUP5AH_-w3iV3/exec";
+
+        // Konfigurasi Batasan
+        const rules = {
+            "Ummu Nabila": [1, 100],
+            "Teteh Lilis": [101, 200],
+            "Ummu Yasmin": [201, 350],
+            "Cadangan": [306, 450]
+        };
+
+        async function save() {
+            let pj = document.getElementById('pj').value;
+            let no = parseInt(document.getElementById('no').value);
+            
+            // Validasi Wilayah
+            if (no < rules[pj][0] || no > rules[pj][1]) {
+                alert(`Akses Ditolak! ${pj} hanya bisa menginput tiket nomor ${rules[pj][0]} sampai ${rules[pj][1]}.`);
+                return;
+            }
+
+            let p = { no, tgl: new Date().toISOString().split('T')[0], pj, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
+            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
+            alert("Data Tersimpan!");
+            document.getElementById('no').value = ''; document.getElementById('hp').value = ''; document.getElementById('alamat').value = '';
+            init();
+        }
 
         async function init() {
             const res = await fetch(GAS_URL);
@@ -98,17 +100,9 @@
             let u = prompt("Username:"); let p = prompt("PIN:");
             const res = await fetch(`${GAS_URL}?action=login&user=${u}&pin=${p}`);
             if((await res.json()).status) { document.getElementById('input-panel').style.display = 'block'; if(n) document.getElementById('no').value = n; }
-            else alert("Ditolak");
+            else alert("Akses Ditolak");
         }
 
-        async function save() {
-            let range = document.getElementById('no').value.split('-');
-            for (let i = parseInt(range[0]); i <= (range[1] || range[0]); i++) {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ no: i, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value }) });
-            }
-            alert("Data Tersimpan!"); document.getElementById('no').value = ''; init();
-        }
-        
         function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
         window.onload = init;
     </script>
