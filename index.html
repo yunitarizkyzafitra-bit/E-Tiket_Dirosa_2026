@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Sistem Kontrol Tiket Dirosa Angkatan 9</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --emerald: #064e3b; }
@@ -34,7 +35,7 @@
                     <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()">Export PDF</button>
                     <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()">Buka Menu Input Data</button>
                     <div id="input-panel">
-                        <h5>Input Data Baru</h5>
+                        <h5>Input/Edit Data Baru</h5>
                         <input type="number" id="no" class="form-control" placeholder="No Tiket">
                         <input type="date" id="tgl" class="form-control mt-2">
                         <select id="pj" class="form-control mt-2"><option value="Ummu Nabila">Ummu Nabila</option><option value="Teteh Lilis">Teteh Lilis</option><option value="Ummu Yasmin">Ummu Yasmin</option></select>
@@ -52,14 +53,13 @@
             </div>
             <div class="card p-3 mt-3">
                 <h5>Daftar Pembeli Tiket</h5>
-                <table class="table table-striped"><thead><tr><th>No</th><th>PJ</th><th>Status</th><th>Alamat</th></tr></thead><tbody id="buyer-table-body"></tbody></table>
+                <table class="table table-striped"><thead><tr><th>No</th><th>PJ</th><th>Status</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="buyer-table-body"></tbody></table>
             </div>
         </div>
     </div>
 
     <script>
-        // GANTI URL DI BAWAH DENGAN URL DEPLOY TERBARU ANDA
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwLmKHaqQHDGiGmWyk0oJNLIn7n8IDPmZaRCxoez8WYGLnyvNnww44ysPxW60x5hdON3w/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyEwZyXx1g1QICep3_HdW0gZWu6IdKbw3zSy99wvzHNInbpc5ygCPde25e_iBUYqcZdVw/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
@@ -71,17 +71,30 @@
             const tbody = document.getElementById('buyer-table-body');
             tbody.innerHTML = ""; grid.innerHTML = "";
             
+            data.forEach(r => {
+                if(r[4] === 'Terjual') {
+                    tbody.innerHTML += `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${r[4]}</td><td>${r[7] || '-'}</td>
+                    <td><button class="btn btn-xs btn-info" onclick="editData('${r[0]}','${r[2]}','${r[4]}','${r[7]}')"><i class="fas fa-edit"></i></button></td></tr>`;
+                }
+            });
+
             for(let i=1; i<=450; i++) {
                 let rowData = data.find(r => r[0] == i);
                 let status = rowData ? rowData[4] : "Tersedia";
-                if(status === 'Terjual') tbody.innerHTML += `<tr><td>${i}</td><td>${rowData[2]}</td><td>${status}</td><td>${rowData[7] || '-'}</td></tr>`;
-                
                 let div = document.createElement('div');
                 div.className = `ticket-box ${status == 'Terjual' ? 'bg-merah' : 'bg-hijau'}`;
                 div.innerText = i;
                 div.onclick = () => { if(status !== 'Terjual' && confirm("Jual Tiket " + i + "?")) quickSave(i); };
                 grid.appendChild(div);
             }
+        }
+
+        function editData(no, pj, status, alamat) {
+            document.getElementById('no').value = no;
+            document.getElementById('pj').value = pj;
+            document.getElementById('status').value = status;
+            document.getElementById('alamat').value = alamat;
+            document.getElementById('input-panel').style.display = 'block';
         }
 
         async function showAuth() {
@@ -94,13 +107,14 @@
 
         async function quickSave(no) {
             await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ no, tgl: new Date().toISOString().split('T')[0], pj: "Admin", target: "Umum", status: "Terjual", ket: "Instan", hp: "-", alamat: "-" }) });
-            location.reload();
+            init();
         }
 
         async function save() {
             let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, target: document.getElementById('target').value, status: document.getElementById('status').value, hp: document.getElementById('hp').value, ket: "Manual", alamat: document.getElementById('alamat').value };
             await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
-            alert("Tersimpan!"); location.reload();
+            alert("Data tersimpan!");
+            init();
         }
         window.onload = init;
     </script>
