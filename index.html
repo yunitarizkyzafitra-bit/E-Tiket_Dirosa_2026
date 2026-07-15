@@ -44,12 +44,15 @@
                         <button class="btn btn-primary btn-sm mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                         <div id="input-panel" style="display:none;">
                             <h6 class="text-danger" id="counter-display"></h6>
-                            <input type="text" id="no" class="form-control" placeholder="No Tiket">
+                            <input type="number" id="no" class="form-control" placeholder="No Tiket">
                             <input type="date" id="tgl" class="form-control mt-1">
-                            <select id="pj" class="form-control mt-1"><option>Ummu Nabila</option><option>Teteh Lilis</option><option>Ummu Yasmin</option><option>Cadangan</option></select>
+                            <select id="pj" class="form-control mt-1">
+                                <option>Ummu Nabila</option><option>Teteh Lilis</option>
+                                <option>Ummu Yasmin</option><option>Cadangan</option>
+                            </select>
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
-                            <button id="save-btn" class="btn btn-success mt-2" onclick="save()">Simpan</button>
+                            <button id="save-btn" class="btn btn-success mt-2" onclick="save()">Simpan Data</button>
                             <button class="btn btn-secondary mt-2" onclick="closeInput()">Kembali</button>
                         </div>
                     </div>
@@ -62,7 +65,7 @@
                 <h5>Riwayat Transaksi</h5>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>Alamat</th><th>HP</th><th>Status</th></tr></thead>
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>Status</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -71,15 +74,14 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxDCBfnHpKSQbZp-SnD8l-lDdCtwW8gra5wD1MbVr3RjqimqM4DpuE3FFRHI4ONO5vYDg/exec";
         let isSaving = false;
 
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
-            
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`).join('');
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[4]}</td></tr>`).join('');
             
             let sold = data.filter(r => r[4] === 'Terjual').length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
@@ -90,38 +92,43 @@
                 grid.innerHTML += `<div class="ticket-box ${data.find(r => r[0] == i) ? 'bg-merah' : 'bg-hijau'}">${i}</div>`;
             }
 
-            // Validasi sesi input harian
-            let today = new Date().toDateString();
-            let lastDate = localStorage.getItem('lastDate');
-            if (lastDate !== today) { localStorage.setItem('sessionCount', 0); localStorage.setItem('lastDate', today); }
-            
             let count = parseInt(localStorage.getItem('sessionCount') || 0);
-            document.getElementById('counter-display').innerText = `Input sesi ini: ${count}/10`;
+            document.getElementById('counter-display').innerText = `Input hari ini: ${count}/10`;
         }
 
         async function save() {
             if (isSaving) return;
             let count = parseInt(localStorage.getItem('sessionCount') || 0);
-            if (count >= 10) { alert("Batas 10 tiket tercapai. Silakan login kembali untuk sesi baru."); document.getElementById('input-panel').style.display = 'none'; return; }
+            if (count >= 10) { alert("Batas 10 tiket tercapai."); return; }
 
-            const no = document.getElementById('no').value;
-            if (!no) { alert("Nomor Tiket wajib diisi!"); return; }
+            const payload = {
+                no: document.getElementById('no').value,
+                tgl: document.getElementById('tgl').value,
+                pj: document.getElementById('pj').value,
+                hp: document.getElementById('hp').value,
+                alamat: document.getElementById('alamat').value
+            };
+
+            if (!payload.no) { alert("Nomor Tiket wajib diisi!"); return; }
 
             isSaving = true;
             const btn = document.getElementById('save-btn');
             btn.disabled = true; btn.innerText = "Mengirim...";
 
-            const formData = new FormData();
-            formData.append('no', no); formData.append('tgl', document.getElementById('tgl').value);
-            formData.append('pj', document.getElementById('pj').value);
-            formData.append('hp', document.getElementById('hp').value);
-            formData.append('alamat', document.getElementById('alamat').value);
-
             try {
-                await fetch(GAS_URL, { method: 'POST', body: formData });
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
                 localStorage.setItem('sessionCount', count + 1);
-                alert("Data tersimpan!"); location.reload();
-            } catch (e) { alert("Gagal menyimpan."); btn.disabled = false; btn.innerText = "Simpan"; isSaving = false; }
+                alert("Data berhasil tersimpan!");
+                location.reload();
+            } catch (e) {
+                alert("Gagal koneksi. Silakan cek koneksi Anda.");
+                isSaving = false; btn.disabled = false; btn.innerText = "Simpan Data";
+            }
         }
 
         function showAuth() { document.getElementById('input-panel').style.display = 'block'; }
