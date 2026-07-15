@@ -9,6 +9,8 @@
     <style>
         :root { --emerald: #064e3b; }
         .sidebar-dark-emerald { background-color: var(--emerald) !important; }
+        .btn-emerald { background-color: #064e3b; color: white; }
+        .nav-link.active { background-color: #047857 !important; color: #fff !important; }
         .ticket-box { padding: 5px; text-align: center; border-radius: 3px; color: white; font-weight: bold; font-size: 10px; border: 1px solid white; cursor: pointer; }
         .bg-hijau { background-color: #10b981; } .bg-merah { background-color: #ef4444; }
         .print-only { display: none; }
@@ -19,9 +21,16 @@
 <body class="layout-fixed">
     <div class="wrapper">
         <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
-            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white" style="font-size: 14px;">Kontrol Tiket Tasyakuran Dirosa Angkatan 9</span></div>
+            <div class="brand-link text-center border-bottom">
+                <span class="brand-text font-weight-bold text-white" style="font-size: 14px; display: block; white-space: normal; line-height: 1.2;">
+                    Kontrol Tiket Tasyakuran Dirosa Angkatan 9
+                </span>
+            </div>
             <div class="sidebar">
-                <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link text-white active">Dashboard</a></li></ul></nav>
+                <div class="text-center py-3">
+                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;">
+                </div>
+                <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
                 <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
                     <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
                 </div>
@@ -48,18 +57,18 @@
                 </div>
             </div>
             <div class="card p-3 mt-3">
-                <h5>Grid Status Tiket (Total 450)</h5>
+                <h5>Grid Status Tiket</h5>
                 <div id="grid" style="display:grid; grid-template-columns: repeat(25, 1fr); gap: 2px;"></div>
             </div>
             <div class="card p-3 mt-3">
                 <h5>Daftar Pembeli Tiket</h5>
-                <table class="table table-striped"><thead><tr><th>No</th><th>PJ</th><th>Status</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="buyer-table-body"></tbody></table>
+                <table class="table table-striped"><thead><tr><th>No</th><th>PJ</th><th>Status</th><th>HP</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="buyer-table-body"></tbody></table>
             </div>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyEwZyXx1g1QICep3_HdW0gZWu6IdKbw3zSy99wvzHNInbpc5ygCPde25e_iBUYqcZdVw/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzqW1Wt5KMyshZxZvd0xKxjWJJq3w1Zvmp50Bj6lMvImIMawRAoK5V3ksluTtU3gcEmSw/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
@@ -73,8 +82,8 @@
             
             data.forEach(r => {
                 if(r[4] === 'Terjual') {
-                    tbody.innerHTML += `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${r[4]}</td><td>${r[7] || '-'}</td>
-                    <td><button class="btn btn-xs btn-info" onclick="editData('${r[0]}','${r[2]}','${r[4]}','${r[7]}')"><i class="fas fa-edit"></i></button></td></tr>`;
+                    tbody.innerHTML += `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${r[4]}</td><td>${r[6]}</td><td>${r[7]}</td>
+                    <td><button class="btn btn-xs btn-info" onclick="editData('${r[0]}','${r[2]}','${r[4]}','${r[6]}','${r[7]}')"><i class="fas fa-edit"></i></button></td></tr>`;
                 }
             });
 
@@ -89,12 +98,14 @@
             }
         }
 
-        function editData(no, pj, status, alamat) {
+        function editData(no, pj, status, hp, alamat) {
             document.getElementById('no').value = no;
             document.getElementById('pj').value = pj;
             document.getElementById('status').value = status;
+            document.getElementById('hp').value = hp;
             document.getElementById('alamat').value = alamat;
             document.getElementById('input-panel').style.display = 'block';
+            window.scrollTo(0, 0);
         }
 
         async function showAuth() {
@@ -113,7 +124,7 @@
         async function save() {
             let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, target: document.getElementById('target').value, status: document.getElementById('status').value, hp: document.getElementById('hp').value, ket: "Manual", alamat: document.getElementById('alamat').value };
             await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
-            alert("Data tersimpan!");
+            alert("Tersimpan!");
             init();
         }
         window.onload = init;
