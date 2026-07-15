@@ -27,10 +27,10 @@
                 <span class="brand-text font-weight-bold text-white" style="font-size: 13px; display: block; white-space: normal; line-height: 1.2;">Kontrol Penjualan Tiket Tasyakuran Angk.9</span>
             </div>
             <div class="sidebar">
-                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
+                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
                 <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
+                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
                 </div>
             </div>
         </aside>
@@ -63,7 +63,9 @@
                 <h5>Riwayat Transaksi</h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-striped">
-                        <thead><tr><th>No</th><th>PJ</th><th>HP</th></tr></thead>
+                        <thead>
+                            <tr><th>Tgl</th><th>No</th><th>PJ</th><th>Alamat</th><th>HP</th><th>Status</th></tr>
+                        </thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -72,7 +74,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyrpBjBFSh6Kxn-k0Feu-IYTiFZbEFS3WEGxhXLzOZ6kv3Bd6jl5ALlwNL0r7sYPzwPMw/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzv_8FJGjiOK-ghEv3_LtIOzq9JtcllvG1WvGDMGC8-VkuUOJW4hUd-egx93KSeXNhM7g/exec";
         const zonaPJ = {"Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450]};
         let inputCount = 0, isSaving = false;
 
@@ -81,7 +83,7 @@
             const res = await fetch(`${GAS_URL}?action=login&user=${u}&pin=${p}`);
             const data = await res.json();
             if(data.status) {
-                inputCount = 0; // Reset counter saat login baru
+                inputCount = 0;
                 document.getElementById('pj').value = data.pj;
                 document.getElementById('pj-logged').innerText = data.pj;
                 updateCounterDisplay();
@@ -110,14 +112,8 @@
             }
             
             inputCount++;
-            if (inputCount >= 10) {
-                alert("Batas 10 input tercapai. Sesi ditutup.");
-                location.reload();
-            } else {
-                alert("Tersimpan. (Input ke-" + inputCount + "/10)");
-                updateCounterDisplay();
-                isSaving = false;
-            }
+            if (inputCount >= 10) { alert("Batas 10 input tercapai. Sesi ditutup."); location.reload(); }
+            else { alert("Tersimpan. (Input ke-" + inputCount + "/10)"); updateCounterDisplay(); isSaving = false; }
         }
 
         async function init() {
@@ -130,7 +126,7 @@
             const tbody = document.getElementById('transaksi-body'); tbody.innerHTML = "";
             
             data.slice().reverse().forEach(r => {
-                let tr = `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td></tr>`;
+                let tr = `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`;
                 tbody.insertAdjacentHTML('beforeend', tr);
             });
 
