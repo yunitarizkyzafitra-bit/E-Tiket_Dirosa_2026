@@ -50,6 +50,8 @@
                                 <option>Ummu Nabila</option><option>Teteh Lilis</option>
                                 <option>Ummu Yasmin</option><option>Cadangan</option>
                             </select>
+                            <input type="text" id="username" class="form-control mt-1" placeholder="Username PJ">
+                            <input type="password" id="pin" class="form-control mt-1" placeholder="PIN Akses">
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
                             <button id="save-btn" class="btn btn-success mt-2" onclick="save()">Simpan Data</button>
@@ -74,7 +76,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxDCBfnHpKSQbZp-SnD8l-lDdCtwW8gra5wD1MbVr3RjqimqM4DpuE3FFRHI4ONO5vYDg/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
         let isSaving = false;
 
         async function init() {
@@ -99,24 +101,26 @@
         async function save() {
             if (isSaving) return;
             let count = parseInt(localStorage.getItem('sessionCount') || 0);
-            if (count >= 10) { alert("Batas 10 tiket tercapai."); return; }
+            if (count >= 10) { alert("Batas 10 tiket tercapai. Login kembali untuk sesi baru."); return; }
 
             const payload = {
                 no: document.getElementById('no').value,
                 tgl: document.getElementById('tgl').value,
                 pj: document.getElementById('pj').value,
+                username: document.getElementById('username').value,
+                pin: document.getElementById('pin').value,
                 hp: document.getElementById('hp').value,
                 alamat: document.getElementById('alamat').value
             };
 
-            if (!payload.no) { alert("Nomor Tiket wajib diisi!"); return; }
+            if (!payload.no || !payload.username || !payload.pin) { alert("Lengkapi No Tiket, Username, dan PIN!"); return; }
 
             isSaving = true;
             const btn = document.getElementById('save-btn');
             btn.disabled = true; btn.innerText = "Mengirim...";
 
             try {
-                await fetch(GAS_URL, {
+                const response = await fetch(GAS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
@@ -126,7 +130,7 @@
                 alert("Data berhasil tersimpan!");
                 location.reload();
             } catch (e) {
-                alert("Gagal koneksi. Silakan cek koneksi Anda.");
+                alert("Gagal koneksi. Cek Username/PIN atau jaringan Anda.");
                 isSaving = false; btn.disabled = false; btn.innerText = "Simpan Data";
             }
         }
