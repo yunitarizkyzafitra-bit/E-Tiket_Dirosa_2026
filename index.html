@@ -14,8 +14,9 @@
         .ticket-box { padding: 5px; text-align: center; border-radius: 3px; color: white; font-weight: bold; font-size: 10px; border: 1px solid white; cursor: pointer; transition: transform 0.2s; }
         .ticket-box:hover { transform: scale(1.1); }
         .bg-hijau { background-color: #10b981; } .bg-merah { background-color: #ef4444; }
-        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 4px; }
-        .table-responsive { overflow-x: auto; }
+        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 3px; }
+        .chart-container { max-width: 200px; margin: 0 auto; }
+        .table-responsive { overflow-x: auto; max-height: 400px; }
         @media print { .no-print { display: none !important; } }
         @media (max-width: 768px) { .content-wrapper { padding: 10px !important; } }
     </style>
@@ -23,21 +24,18 @@
 <body class="layout-fixed">
     <div class="wrapper">
         <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
-            <div class="brand-link text-center border-bottom">
-                <span class="brand-text font-weight-bold text-white" style="font-size: 13px;">Kontrol Tiket Dirosa Angk.9</span>
-            </div>
+            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white" style="font-size: 13px;">Kontrol Tiket Dirosa Angk.9</span></div>
             <div class="sidebar">
                 <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
-                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
-                </div>
+                <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
+                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;"></div>
             </div>
         </aside>
 
         <div class="content-wrapper p-3">
             <div class="row">
                 <div class="col-md-5">
-                    <div class="card p-3"><canvas id="myChart"></canvas></div>
+                    <div class="card p-3"><div class="chart-container"><canvas id="myChart"></canvas></div></div>
                     <div class="card p-2 text-center"><h6>Total Penjualan</h6><h2 id="total-percent">0%</h2></div>
                 </div>
                 <div class="col-md-7">
@@ -52,6 +50,7 @@
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
                             <button class="btn btn-success mt-2" onclick="save()">Simpan</button>
+                            <button class="btn btn-secondary mt-2" onclick="closeInput()">Kembali</button>
                         </div>
                     </div>
                 </div>
@@ -72,21 +71,27 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxrl-u8EOK3CdSyeDoxISiqsq6oHkXKSwAtdQbek769mBoFAzk4Lc5wSYD5ObjbQaFK8w/exec";
-        let sessionCount = 0;
-
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
+        
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
+            
+            // Render Tabel (Uraian Transaksi)
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = "";
-            data.slice().reverse().forEach(r => {
-                tbody.innerHTML += `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`;
-            });
-            // Update UI Chart & Grid... (Logika chart tetap sama)
-            // ... [Script logika existing disematkan di sini]
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`).join('');
+            
+            // Render Chart & Grid
+            let sold = data.filter(r => r[4] === 'Terjual').length;
+            document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
+            new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
+            const grid = document.getElementById('grid'); grid.innerHTML = "";
+            for(let i=1; i<=450; i++) {
+                grid.innerHTML += `<div class="ticket-box ${data.find(r => r[0] == i) ? 'bg-merah' : 'bg-hijau'}">${i}</div>`;
+            }
         }
-        // ... [Fungsi save, showAuth, dll tetap sama]
+        function showAuth() { document.getElementById('input-panel').style.display = 'block'; }
+        function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
         window.onload = init;
     </script>
 </body>
