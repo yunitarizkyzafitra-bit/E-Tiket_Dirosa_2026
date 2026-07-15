@@ -48,7 +48,7 @@
                         <h5>Input Tiket (Login: <span id="pj-logged"></span>)</h5>
                         <input type="text" id="no" class="form-control" placeholder="No Tiket/Rentang">
                         <input type="date" id="tgl" class="form-control mt-2">
-                        <input type="hidden" id="pj"> <!-- PJ terkunci otomatis -->
+                        <input type="hidden" id="pj">
                         <select id="status" class="form-control mt-2" disabled><option>Terjual</option></select>
                         <input type="text" id="hp" class="form-control mt-2" placeholder="Nomor HP">
                         <input type="text" id="alamat" class="form-control mt-2" placeholder="Alamat">
@@ -61,14 +61,16 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby0mPNHfokbkaQH4zT4VukvAmtYuC8ZCGwmt47efFyzaLmsf-8p6834gbheYhhERaHLBw/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwVCiH39_sArLvV_9SHknBVtfUTswcJL5EBZlnekQgRVVkSGaJ_AuWgftsVfgp_abHgfg/exec";
         const zonaPJ = {"Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450]};
+        let inputCount = 0; // Batasan sesi 10 input
 
         async function showAuth(n) {
             let u = prompt("Username:"); let p = prompt("PIN:");
             const res = await fetch(`${GAS_URL}?action=login&user=${u}&pin=${p}`);
             const data = await res.json();
             if(data.status) {
+                inputCount = 0; // Reset counter saat login sukses
                 document.getElementById('pj').value = data.pj;
                 document.getElementById('pj-logged').innerText = data.pj;
                 document.getElementById('input-panel').style.display = 'block';
@@ -77,6 +79,8 @@
         }
 
         async function save() {
+            if (inputCount >= 10) { alert("Batas sesi 10 input tercapai. Silakan login kembali."); location.reload(); return; }
+            
             let pj = document.getElementById('pj').value;
             let range = document.getElementById('no').value.split('-');
             let start = parseInt(range[0]);
@@ -90,10 +94,13 @@
             for (let i = start; i <= end; i++) {
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ no: i, tgl: document.getElementById('tgl').value, pj, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value }) });
             }
-            alert("Data Tersimpan!"); location.reload();
+            
+            inputCount++;
+            alert(`Tersimpan (Sesi ke-${inputCount}/10)`);
+            document.getElementById('no').value = ''; 
+            init();
         }
 
-        // Fungsi init dan lainnya tetap sama untuk menjaga integritas...
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
@@ -109,6 +116,7 @@
                 grid.appendChild(div);
             }
         }
+
         function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
         window.onload = init;
     </script>
