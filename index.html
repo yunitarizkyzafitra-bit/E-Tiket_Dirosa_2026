@@ -17,9 +17,9 @@
         .print-only { display: none; }
         #input-panel { display: none; }
         
-        /* Profesional Sidebar Layout */
+        /* Sidebar Professional Layout - DILOCK & DIPERBAIKI */
         .sidebar-img-wrapper { width: 100%; padding: 15px; text-align: center; box-sizing: border-box; }
-        .sidebar-img-wrapper img { max-width: 100%; height: auto; display: block; margin: 0 auto; object-fit: contain; }
+        .sidebar-img-wrapper img { max-width: 100%; height: auto; display: block; margin: 0 auto; object-fit: contain; border-radius: 5px; }
         
         @media print { .no-print { display: none !important; } }
         @media (max-width: 768px) { .content-wrapper { padding: 10px !important; } }
@@ -33,13 +33,13 @@
             </div>
             <div class="sidebar">
                 <div class="sidebar-img-wrapper">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/logo%20MWD.png" style="border: 2px solid white; border-radius: 5px;">
+                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/logo%20MWD.png" style="border: 2px solid white;">
                 </div>
                 
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
                 
                 <div style="position: absolute; bottom: 20px; width: 100%;" class="sidebar-img-wrapper">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/Gambar%20Tiket.png" style="border-radius: 5px;">
+                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/Gambar%20Tiket.png">
                 </div>
             </div>
         </aside>
@@ -81,11 +81,11 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbylmrBUGn43FJp1CN4K7VpatkSByYFuS496MuWh9Jc0ZvVOrn37plQk5hFWLpSg39chkg/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz4PoJ40E64d0jaODQbhlbTs8uWoyggtUdpCqigSRcGRnQ27tEWIwalJp2qKVvz_dCc-g/exec";
         const zonaPJ = {"Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450]};
         let inputCount = 0, isSaving = false;
 
-        async function showAuth(n, isEdit = false) {
+        async function showAuth(n) {
             let u = prompt("Username:"); let p = prompt("PIN:");
             const res = await fetch(`${GAS_URL}?action=login&user=${u}&pin=${p}`);
             const data = await res.json();
@@ -123,17 +123,20 @@
             let sold = data.filter(r => r[4] === 'Terjual').length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
+            
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             const tbody = document.getElementById('transaksi-body'); tbody.innerHTML = "";
+            
             data.slice().reverse().forEach(r => {
                 let tr = `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`;
                 tbody.insertAdjacentHTML('beforeend', tr);
             });
+
             for(let i=1; i<=450; i++) {
                 let rec = data.find(r => r[0] == i);
                 let div = document.createElement('div');
                 div.className = `ticket-box ${rec ? 'bg-merah' : 'bg-hijau'}`;
-                div.innerText = i; div.onclick = () => showAuth(i, !!rec);
+                div.innerText = i; div.onclick = () => showAuth(i);
                 grid.appendChild(div);
             }
         }
