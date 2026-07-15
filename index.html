@@ -9,27 +9,28 @@
     <style>
         :root { --emerald: #064e3b; }
         .sidebar-dark-emerald { background-color: var(--emerald) !important; }
-        .btn-emerald { background-color: #064e3b; color: white; }
+        .btn-emerald { background-color: var(--emerald); color: white; }
         .nav-link.active { background-color: #047857 !important; color: #fff !important; }
         .ticket-box { padding: 5px; text-align: center; border-radius: 3px; color: white; font-weight: bold; font-size: 10px; border: 1px solid white; cursor: pointer; }
         .bg-hijau { background-color: #10b981; } .bg-merah { background-color: #ef4444; }
         .print-only { display: none; }
         #input-panel { display: none; }
-        @media print { .no-print { display: none !important; } .print-only { display: block !important; } }
+        @media print {
+            .print-only { display: block !important; }
+            .no-print { display: none !important; }
+            .bg-merah { background-color: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .bg-hijau { background-color: #10b981 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 </head>
 <body class="layout-fixed">
     <div class="wrapper">
         <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
             <div class="brand-link text-center border-bottom">
-                <span class="brand-text font-weight-bold text-white" style="font-size: 14px; display: block; white-space: normal; line-height: 1.2;">
-                    Kontrol Tiket Tasyakuran Dirosa Angkatan 9
-                </span>
+                <span class="brand-text font-weight-bold text-white" style="font-size: 14px; display: block; white-space: normal; line-height: 1.2;">Kontrol Tiket Tasyakuran Dirosa Angkatan 9</span>
             </div>
             <div class="sidebar">
-                <div class="text-center py-3">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;">
-                </div>
+                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
                 <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
                     <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
@@ -38,10 +39,14 @@
         </aside>
 
         <div class="content-wrapper p-4">
+            <div id="print-header" class="print-only text-center mb-4">
+                <h3>LAPORAN PENJUALAN TIKET</h3>
+                <p>Status: <span class="badge bg-merah">Terjual</span> <span class="badge bg-hijau">Tersedia</span> | Progres: <span id="percent-label">0%</span></p>
+            </div>
             <div class="row">
                 <div class="col-md-5"><div class="card p-3"><canvas id="myChart"></canvas></div></div>
                 <div class="col-md-7 card p-3">
-                    <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()">Export PDF</button>
+                    <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF Profesional</button>
                     <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()">Buka Menu Input Data</button>
                     <div id="input-panel">
                         <h5>Input/Edit Data Baru</h5>
@@ -68,12 +73,13 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzqW1Wt5KMyshZxZvd0xKxjWJJq3w1Zvmp50Bj6lMvImIMawRAoK5V3ksluTtU3gcEmSw/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbweEZEVbb7pw9lEdMYLp5CPg-ZQOVqCnx2vYJEYQfV7FozPE-jhOvIKArfQrHA1LBnPoA/exec";
 
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
             let sold = data.filter(r => r[4] === 'Terjual').length;
+            document.getElementById('percent-label').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
             
             const grid = document.getElementById('grid');
@@ -99,12 +105,9 @@
         }
 
         function editData(no, pj, status, hp, alamat) {
-            document.getElementById('no').value = no;
-            document.getElementById('pj').value = pj;
-            document.getElementById('status').value = status;
-            document.getElementById('hp').value = hp;
-            document.getElementById('alamat').value = alamat;
-            document.getElementById('input-panel').style.display = 'block';
+            document.getElementById('no').value = no; document.getElementById('pj').value = pj;
+            document.getElementById('status').value = status; document.getElementById('hp').value = hp;
+            document.getElementById('alamat').value = alamat; document.getElementById('input-panel').style.display = 'block';
             window.scrollTo(0, 0);
         }
 
@@ -124,8 +127,7 @@
         async function save() {
             let p = { no: document.getElementById('no').value, tgl: document.getElementById('tgl').value, pj: document.getElementById('pj').value, target: document.getElementById('target').value, status: document.getElementById('status').value, hp: document.getElementById('hp').value, ket: "Manual", alamat: document.getElementById('alamat').value };
             await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
-            alert("Tersimpan!");
-            init();
+            alert("Tersimpan!"); init();
         }
         window.onload = init;
     </script>
