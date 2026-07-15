@@ -16,11 +16,6 @@
         #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); gap: 3px; }
         .print-only { display: none; }
         #input-panel { display: none; }
-        
-        /* Sidebar Professional Layout - DILOCK & DIPERBAIKI */
-        .sidebar-img-wrapper { width: 100%; padding: 15px; text-align: center; box-sizing: border-box; }
-        .sidebar-img-wrapper img { max-width: 100%; height: auto; display: block; margin: 0 auto; object-fit: contain; border-radius: 5px; }
-        
         @media print { .no-print { display: none !important; } }
         @media (max-width: 768px) { .content-wrapper { padding: 10px !important; } }
     </style>
@@ -32,14 +27,10 @@
                 <span class="brand-text font-weight-bold text-white" style="font-size: 13px; display: block; white-space: normal; line-height: 1.2;">Kontrol Penjualan Tiket Tasyakuran Angk.9</span>
             </div>
             <div class="sidebar">
-                <div class="sidebar-img-wrapper">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/logo%20MWD.png" style="border: 2px solid white;">
-                </div>
-                
+                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
-                
-                <div style="position: absolute; bottom: 20px; width: 100%;" class="sidebar-img-wrapper">
-                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_2026/main/Gambar%20Tiket.png">
+                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;">
+                    <img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;">
                 </div>
             </div>
         </aside>
@@ -54,92 +45,78 @@
                     <button class="btn btn-warning btn-sm no-print mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
                     <button class="btn btn-primary btn-sm no-print mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                     <div id="input-panel">
-                        <h5>Input Tiket (PJ: <span id="pj-logged"></span>)</h5>
-                        <p class="text-muted small" id="session-counter"></p>
+                        <h5>Input Tiket (Zona PJ)</h5>
                         <input type="text" id="no" class="form-control" placeholder="No Tiket/Rentang">
                         <input type="date" id="tgl" class="form-control mt-2">
-                        <input type="hidden" id="pj">
+                        <select id="pj" class="form-control mt-2">
+                            <option value="Ummu Nabila">Ummu Nabila (1-100)</option>
+                            <option value="Teteh Lilis">Teteh Lilis (101-200)</option>
+                            <option value="Ummu Yasmin">Ummu Yasmin (201-350)</option>
+                            <option value="Cadangan">Cadangan (351-450)</option>
+                        </select>
+                        <select id="status" class="form-control mt-2"><option>Terjual</option></select>
                         <input type="text" id="hp" class="form-control mt-2" placeholder="Nomor HP">
                         <input type="text" id="alamat" class="form-control mt-2" placeholder="Alamat">
-                        <div class="mt-3"><button class="btn btn-success" id="save-btn" onclick="save()">Simpan</button> <button class="btn btn-secondary" onclick="closeInput()">Kembali</button></div>
+                        <div class="mt-3"><button class="btn btn-success" onclick="save()">Simpan</button> <button class="btn btn-secondary" onclick="closeInput()">Kembali</button></div>
                     </div>
                 </div>
             </div>
-            
             <div class="card p-3 mt-3"><h5>Grid Tiket</h5><div id="grid"></div></div>
-            
-            <div class="card p-3 mt-3">
-                <h5>Riwayat Transaksi</h5>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped">
-                        <thead><tr><th>Tgl</th><th>No</th><th>PJ</th><th>Alamat</th><th>HP</th><th>Status</th></tr></thead>
-                        <tbody id="transaksi-body"></tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbz4PoJ40E64d0jaODQbhlbTs8uWoyggtUdpCqigSRcGRnQ27tEWIwalJp2qKVvz_dCc-g/exec";
-        const zonaPJ = {"Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450]};
-        let inputCount = 0, isSaving = false;
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbye3B7Sa85b8mAiNNz8U7tUMYJ75geouTIcFmTfqd3RslKqo095-GvHqnSEpE2K_LgMAA/exec";
+        
+        // Logika Batasan Zona PJ
+        const zonaPJ = {
+            "Ummu Nabila": [1, 100],
+            "Teteh Lilis": [101, 200],
+            "Ummu Yasmin": [201, 350],
+            "Cadangan": [351, 450]
+        };
+
+        async function save() {
+            let pj = document.getElementById('pj').value;
+            let range = document.getElementById('no').value.split('-');
+            let start = parseInt(range[0]);
+            let end = parseInt(range[1] || range[0]);
+
+            // Validasi: Pastikan nomor input masuk dalam zona PJ yang dipilih
+            if (start < zonaPJ[pj][0] || end > zonaPJ[pj][1]) {
+                alert(`Akses Ditolak! ${pj} hanya bisa menginput tiket nomor ${zonaPJ[pj][0]}-${zonaPJ[pj][1]}.`);
+                return;
+            }
+
+            for (let i = start; i <= end; i++) {
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ no: i, tgl: document.getElementById('tgl').value, pj, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value }) });
+            }
+            alert("Data Tersimpan!"); document.getElementById('no').value = ''; init();
+        }
+
+        async function init() {
+            const res = await fetch(GAS_URL);
+            const data = await res.json();
+            let sold = data.filter(r => r[4] === 'Terjual').length;
+            document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
+            new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
+            const grid = document.getElementById('grid'); grid.innerHTML = "";
+            for(let i=1; i<=450; i++) {
+                let status = data.find(r => r[0] == i) ? 'bg-merah' : 'bg-hijau';
+                let div = document.createElement('div');
+                div.className = `ticket-box ${status}`; div.innerText = i;
+                div.onclick = () => { if(status === 'bg-hijau') showAuth(i); };
+                grid.appendChild(div);
+            }
+        }
 
         async function showAuth(n) {
             let u = prompt("Username:"); let p = prompt("PIN:");
             const res = await fetch(`${GAS_URL}?action=login&user=${u}&pin=${p}`);
-            const data = await res.json();
-            if(data.status) {
-                inputCount = 0;
-                document.getElementById('pj').value = data.pj;
-                document.getElementById('pj-logged').innerText = data.pj;
-                updateCounterDisplay();
-                document.getElementById('input-panel').style.display = 'block';
-                if(n) document.getElementById('no').value = n;
-            } else alert("Akses Ditolak/PIN Salah");
+            if((await res.json()).status) { document.getElementById('input-panel').style.display = 'block'; if(n) document.getElementById('no').value = n; }
+            else alert("Akses Ditolak");
         }
-
-        function updateCounterDisplay() {
-            document.getElementById('session-counter').innerText = "Sisa input sesi ini: " + (10 - inputCount) + "/10";
-        }
-
-        async function save() {
-            if (isSaving || inputCount >= 10) return;
-            isSaving = true;
-            let pj = document.getElementById('pj').value;
-            let range = document.getElementById('no').value.split('-');
-            let start = parseInt(range[0]), end = parseInt(range[1] || range[0]);
-            if (start < zonaPJ[pj][0] || end > zonaPJ[pj][1]) { alert("Akses Ditolak! Luar zona PJ."); isSaving = false; return; }
-            for (let i = start; i <= end; i++) {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ no: i, tgl: document.getElementById('tgl').value, pj, status: "Terjual", hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value }) });
-            }
-            inputCount++;
-            if (inputCount >= 10) { alert("Batas 10 input tercapai. Sesi ditutup."); location.reload(); }
-            else { alert("Tersimpan. (Input ke-" + inputCount + "/10)"); updateCounterDisplay(); isSaving = false; }
-        }
-
-        async function init() {
-            const res = await fetch(GAS_URL); const data = await res.json();
-            let sold = data.filter(r => r[4] === 'Terjual').length;
-            document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
-            new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { labels: ['Terjual', 'Sisa'], datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
-            
-            const grid = document.getElementById('grid'); grid.innerHTML = "";
-            const tbody = document.getElementById('transaksi-body'); tbody.innerHTML = "";
-            
-            data.slice().reverse().forEach(r => {
-                let tr = `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`;
-                tbody.insertAdjacentHTML('beforeend', tr);
-            });
-
-            for(let i=1; i<=450; i++) {
-                let rec = data.find(r => r[0] == i);
-                let div = document.createElement('div');
-                div.className = `ticket-box ${rec ? 'bg-merah' : 'bg-hijau'}`;
-                div.innerText = i; div.onclick = () => showAuth(i);
-                grid.appendChild(div);
-            }
-        }
+        
         function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
         window.onload = init;
     </script>
