@@ -52,7 +52,6 @@
                             <input type="password" id="pin" class="form-control mt-1" placeholder="PIN Akses">
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
-                            <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan">
                             <button id="save-btn" class="btn btn-success mt-2" onclick="save()">Simpan Data</button>
                             <button class="btn btn-secondary mt-2" onclick="closeInput()">Kembali</button>
                         </div>
@@ -69,7 +68,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Ket</th></tr></thead>
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Status</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -91,8 +90,8 @@
             soldTickets = data.map(r => parseInt(r[0])); 
             
             const tbody = document.getElementById('transaksi-body');
-            // Pastikan indeks r[8] sesuai dengan urutan kolom "Keterangan" di sheet Anda
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8] || '-'}</td></tr>`).join('');
+            // Menampilkan status sebagai "Terjual"
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td><span class="badge badge-danger">Terjual</span></td></tr>`).join('');
             
             let sold = soldTickets.length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
@@ -111,7 +110,6 @@
             const no = parseInt(document.getElementById('no').value);
             const pin = document.getElementById('pin').value;
             
-            // Validasi Keamanan
             if (PINS[pj] !== pin) return alert("PIN Salah untuk PJ ini!");
             if (no < RANGES[pj][0] || no > RANGES[pj][1]) return alert("Nomor ini di luar jangkauan wilayah tugas Anda!");
             if (soldTickets.includes(no)) return alert("Tiket sudah terjual!");
@@ -120,13 +118,12 @@
             const payload = { 
                 no: no, tgl: document.getElementById('tgl').value, pj: pj, 
                 username: document.getElementById('username').value, pin: pin, 
-                hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value,
-                keterangan: document.getElementById('keterangan').value 
+                hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value 
             };
             
             try {
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-                alert("Data berhasil tersimpan!"); location.reload();
+                alert("Data berhasil disimpan!"); location.reload();
             } catch (e) { alert("Gagal koneksi."); isSaving = false; }
         }
 
