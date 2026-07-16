@@ -44,11 +44,6 @@
                         <button class="btn btn-primary btn-sm mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                         <div id="input-panel" style="display:none;">
                             <input type="number" id="no" class="form-control" placeholder="No Tiket (1-450)">
-                            <select id="status" class="form-control mt-1">
-                                <option value="Tersedia">Tersedia</option>
-                                <option value="Terjual">Terjual</option>
-                            </select>
-                            <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan / Uraian Transaksi">
                             <input type="date" id="tgl" class="form-control mt-1">
                             <select id="pj" class="form-control mt-1">
                                 <option>Ummu Nabila</option><option>Teteh Lilis</option>
@@ -69,9 +64,13 @@
 
             <div class="card p-3">
                 <h5>Riwayat Transaksi</h5>
+                <div class="input-group mb-2 no-print">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+                    <input type="text" id="search-pj" class="form-control form-control-sm" placeholder="Cari nama PJ..." onkeyup="filterTable()">
+                </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>Status</th><th>Keterangan</th></tr></thead>
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Status</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -80,7 +79,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxF4iN66ls9vvBwuvw1_4H6t-sW1ixiZgEhoLGAQbADFhMlb8ZiIdnPluv8-5G90JDbjQ/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
         const PINS = { "Ummu Nabila": "28820", "Teteh Lilis": "22550", "Ummu Yasmin": "22880", "Cadangan": "8890" };
         let soldTickets = [];
         let isSaving = false;
@@ -92,26 +91,37 @@
             const data = await res.json();
             soldTickets = data.map(r => parseInt(r[0])); 
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[4]}</td><td>${r[8]}</td></tr>`).join('');
-            // ... (logika chart dan grid tetap sama)
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[4]}</td></tr>`).join('');
+            let sold = soldTickets.length;
+            document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
+            new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
+            const grid = document.getElementById('grid'); grid.innerHTML = "";
+            for(let i=1; i<=450; i++) {
+                let isSold = soldTickets.includes(i);
+                grid.innerHTML += `<div class="ticket-box ${isSold ? 'bg-merah' : 'bg-hijau'}" ${isSold ? '' : `onclick="selectTicket(${i})"`}>${i}</div>`;
+            }
         }
 
+        function filterTable() {
+            let input = document.getElementById("search-pj").value.toUpperCase();
+            let tr = document.getElementById("transaksi-body").getElementsByTagName("tr");
+            for (let i = 0; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName("td")[2];
+                if (td) tr[i].style.display = (td.textContent || td.innerText).toUpperCase().indexOf(input) > -1 ? "" : "none";
+            }
+        }
+
+        function selectTicket(no) { document.getElementById('no').value = no; showAuth(); }
         async function save() {
             if (isSaving) return;
-            const payload = {
-                no: document.getElementById('no').value,
-                tgl: document.getElementById('tgl').value,
-                pj: document.getElementById('pj').value,
-                status: document.getElementById('status').value, // Input baru
-                keterangan: document.getElementById('keterangan').value, // Input baru
-                username: document.getElementById('username').value,
-                pin: document.getElementById('pin').value,
-                hp: document.getElementById('hp').value,
-                alamat: document.getElementById('alamat').value
-            };
-            // ... (logika validasi dan fetch tetap sama)
-            isSaving = true;
-            document.getElementById('save-btn').innerText = "Mengirim...";
+            const pjSelect = document.getElementById('pj').value;
+            const noVal = parseInt(document.getElementById('no').value);
+            const p = document.getElementById('pin').value;
+            if (PINS[pjSelect] && PINS[pjSelect] !== p) { alert("PIN Salah!"); return; }
+            if (soldTickets.includes(noVal)) { alert("Tiket sudah terjual!"); return; }
+            const payload = { no: noVal, tgl: document.getElementById('tgl').value, pj: pjSelect, username: document.getElementById('username').value, pin: p, hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
+            localStorage.setItem('savedUser', payload.username); localStorage.setItem('savedPin', p);
+            isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
             try {
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 alert("Data berhasil tersimpan!"); location.reload();
