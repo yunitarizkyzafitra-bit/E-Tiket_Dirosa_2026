@@ -31,7 +31,7 @@
                 <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;"></div>
             </div>
         </aside>
-
+ 
         <div class="content-wrapper p-3">
             <div class="row">
                 <div class="col-md-5">
@@ -53,37 +53,38 @@
                             <input type="password" id="pin" class="form-control mt-1" placeholder="PIN Akses">
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
+                            <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan Tambahan">
                             <button id="save-btn" class="btn btn-success mt-2" onclick="save()">Simpan Data</button>
                             <button class="btn btn-secondary mt-2" onclick="closeInput()">Kembali</button>
                         </div>
                     </div>
                 </div>
             </div>
-
+ 
             <div class="card p-3 mt-3"><h5>Grid Tiket</h5><div id="grid"></div></div>
-
+ 
             <div class="card p-3">
                 <h5>Riwayat Transaksi</h5>
                 <div class="input-group mb-2 no-print">
                     <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
-                    <input type="text" id="search-pj" class="form-control form-control-sm" placeholder="Cari nama PJ..." onkeyup="filterTable()">
+                    <input type="text" id="search-pj" class="form-control form-control-sm" placeholder="Cari nama PJ atau keterangan..." onkeyup="filterTable()">
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Status</th></tr></thead>
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Ket</th><th>Status</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-
+ 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
         const PINS = { "Ummu Nabila": "28820", "Teteh Lilis": "22550", "Ummu Yasmin": "22880", "Cadangan": "8890" };
         let soldTickets = [];
         let isSaving = false;
-
+ 
         async function init() {
             document.getElementById('username').value = localStorage.getItem('savedUser') || "";
             document.getElementById('pin').value = localStorage.getItem('savedPin') || "";
@@ -91,7 +92,8 @@
             const data = await res.json();
             soldTickets = data.map(r => parseInt(r[0])); 
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[4]}</td></tr>`).join('');
+            // Menampilkan data termasuk kolom Keterangan (indeks ke-8 pada sheet jika ditambahkan)
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[4]}</td></tr>`).join('');
             let sold = soldTickets.length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
@@ -101,25 +103,34 @@
                 grid.innerHTML += `<div class="ticket-box ${isSold ? 'bg-merah' : 'bg-hijau'}" ${isSold ? '' : `onclick="selectTicket(${i})"`}>${i}</div>`;
             }
         }
-
+ 
         function filterTable() {
             let input = document.getElementById("search-pj").value.toUpperCase();
             let tr = document.getElementById("transaksi-body").getElementsByTagName("tr");
             for (let i = 0; i < tr.length; i++) {
-                let td = tr[i].getElementsByTagName("td")[2];
-                if (td) tr[i].style.display = (td.textContent || td.innerText).toUpperCase().indexOf(input) > -1 ? "" : "none";
+                let rowText = tr[i].textContent || tr[i].innerText;
+                tr[i].style.display = rowText.toUpperCase().indexOf(input) > -1 ? "" : "none";
             }
         }
-
+ 
         function selectTicket(no) { document.getElementById('no').value = no; showAuth(); }
+        
         async function save() {
             if (isSaving) return;
-            const pjSelect = document.getElementById('pj').value;
             const noVal = parseInt(document.getElementById('no').value);
+            const pjSelect = document.getElementById('pj').value;
             const p = document.getElementById('pin').value;
-            if (PINS[pjSelect] && PINS[pjSelect] !== p) { alert("PIN Salah!"); return; }
+            
             if (soldTickets.includes(noVal)) { alert("Tiket sudah terjual!"); return; }
-            const payload = { no: noVal, tgl: document.getElementById('tgl').value, pj: pjSelect, username: document.getElementById('username').value, pin: p, hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
+            if (PINS[pjSelect] && PINS[pjSelect] !== p) { alert("PIN Salah!"); return; }
+            
+            const payload = { 
+                no: noVal, tgl: document.getElementById('tgl').value, pj: pjSelect, 
+                username: document.getElementById('username').value, pin: p, 
+                hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value,
+                keterangan: document.getElementById('keterangan').value 
+            };
+            
             localStorage.setItem('savedUser', payload.username); localStorage.setItem('savedPin', p);
             isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
             try {
