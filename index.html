@@ -18,17 +18,15 @@
         .chart-container { max-width: 200px; margin: 0 auto; }
         .table-responsive { overflow-x: auto; max-height: 400px; }
         @media print { .no-print { display: none !important; } }
-        @media (max-width: 768px) { .content-wrapper { padding: 10px !important; } }
     </style>
 </head>
 <body class="layout-fixed">
     <div class="wrapper">
         <aside class="main-sidebar sidebar-dark-emerald elevation-4 no-print">
-            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white" style="font-size: 13px;">Kontrol Tiket Dirosa Angk.9</span></div>
+            <div class="brand-link text-center border-bottom"><span class="brand-text font-weight-bold text-white">Kontrol Tiket Dirosa</span></div>
             <div class="sidebar">
-                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
-                <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
-                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;"></div>
+                <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="70%" style="border-radius: 5px; border: 2px solid white;"></div>
+                <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active"><i class="nav-icon fas fa-tachometer-alt"></i> Dashboard</a></li></ul></nav>
             </div>
         </aside>
 
@@ -36,14 +34,12 @@
             <div class="row">
                 <div class="col-md-5">
                     <div class="card p-3"><div class="chart-container"><canvas id="myChart"></canvas></div></div>
-                    <div class="card p-2 text-center"><h6>Total Penjualan</h6><h2 id="total-percent">0%</h2></div>
                 </div>
                 <div class="col-md-7">
-                    <div class="card p-3">
-                        <button class="btn btn-warning btn-sm mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
-                        <button class="btn btn-primary btn-sm mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
+                    <div class="card p-3" id="input-card">
+                        <button class="btn btn-primary btn-block mb-3" onclick="showAuth()"><i class="fas fa-plus"></i> Input Tiket Baru</button>
                         <div id="input-panel" style="display:none;">
-                            <input type="number" id="no" class="form-control" placeholder="No Tiket (1-450)" readonly>
+                            <input type="number" id="no" class="form-control" placeholder="No Tiket" readonly>
                             <input type="date" id="tgl" class="form-control mt-1">
                             <select id="pj" class="form-control mt-1">
                                 <option>Ummu Nabila</option><option>Teteh Lilis</option>
@@ -51,27 +47,23 @@
                             </select>
                             <select id="status" class="form-control mt-1">
                                 <option value="Terjual">Terjual</option>
-                                <option value="Tersedia">Tersedia</option>
                             </select>
-                            <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan">
-                            <input type="text" id="username" class="form-control mt-1" placeholder="Username PJ">
-                            <input type="password" id="pin" class="form-control mt-1" placeholder="PIN Akses">
+                            <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan (Wajib)">
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
-                            <button id="save-btn" class="btn btn-success mt-2" onclick="save()">Simpan Data</button>
-                            <button class="btn btn-secondary mt-2" onclick="closeInput()">Kembali</button>
+                            <input type="password" id="pin" class="form-control mt-1" placeholder="PIN Akses">
+                            <button id="save-btn" class="btn btn-success btn-block mt-2" onclick="save()">Simpan Data</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card p-3 mt-3"><h5>Grid Tiket</h5><div id="grid"></div></div>
-
             <div class="card p-3">
                 <h5>Riwayat Transaksi</h5>
+                <input type="text" id="search" class="form-control mb-2" placeholder="🔍 Cari berdasarkan PJ atau Keterangan..." onkeyup="filterTable()">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Status</th></tr></thead>
+                    <table class="table table-bordered table-striped table-sm" id="transaksi-table">
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>Status</th><th>Keterangan</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -83,23 +75,14 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbw1Gu-cxt900gxbrLcrWVCvhBVJhHYsyA3-j2Wmtf71IEQ1iin31ZNMe4ZKBBFCPAq2ag/exec";
         const PINS = { "Ummu Nabila": "28820", "Teteh Lilis": "22550", "Ummu Yasmin": "22880", "Cadangan": "8890" };
         const RANGES = { "Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450] };
-        
         let soldTickets = [];
-        let isSaving = false;
 
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
             soldTickets = data.map(r => parseInt(r[0]));
-            
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => 
-                `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[3]}</td></tr>`
-            ).join('');
-            
-            let sold = soldTickets.length;
-            document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
-            new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
             
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             for(let i=1; i<=450; i++) {
@@ -108,29 +91,33 @@
             }
         }
 
+        function filterTable() {
+            let val = document.getElementById('search').value.toLowerCase();
+            let rows = document.getElementById('transaksi-body').getElementsByTagName('tr');
+            for (let row of rows) {
+                row.style.display = row.innerText.toLowerCase().includes(val) ? "" : "none";
+            }
+        }
+
         async function save() {
             const pj = document.getElementById('pj').value;
             const no = parseInt(document.getElementById('no').value);
             const pin = document.getElementById('pin').value;
-            
-            if (PINS[pj] !== pin) return alert("PIN Salah!");
-            if (no < RANGES[pj][0] || no > RANGES[pj][1]) return alert("Nomor tiket tidak sesuai rentang PJ!");
-            if (soldTickets.includes(no)) return alert("Tiket sudah terjual!");
+            const ket = document.getElementById('keterangan').value;
 
-            isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
-            const payload = {
-                no: no, tgl: document.getElementById('tgl').value, pj: pj, 
-                status: document.getElementById('status').value, keterangan: document.getElementById('keterangan').value,
-                username: document.getElementById('username').value, pin: pin, 
-                hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value
-            };
+            if (PINS[pj] !== pin) return alert("PIN Salah!");
+            if (no < RANGES[pj][0] || no > RANGES[pj][1]) return alert("Nomor diluar jangkauan PJ!");
+            if (soldTickets.includes(no)) return alert("Tiket sudah terjual!");
+            if (!ket) return alert("Keterangan wajib diisi!");
+
+            document.getElementById('save-btn').innerText = "Mengirim...";
+            const payload = { no, tgl: document.getElementById('tgl').value, pj, status: document.getElementById('status').value, keterangan: ket, hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value, pin };
             
             await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            alert("Berhasil!"); location.reload();
+            alert("Data berhasil disimpan!"); location.reload();
         }
 
         function showAuth() { document.getElementById('input-panel').style.display = 'block'; }
-        function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
         function selectTicket(no) { document.getElementById('no').value = no; showAuth(); }
         window.onload = init;
     </script>
