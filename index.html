@@ -78,8 +78,14 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
         
-        // Database PIN Profesional
-        const PINS = { "Ummu Nabila": "28820", "Teteh Lilis": "22550", "Ummu Yasmin": "22880" };
+        // Database PIN Profesional (Update: Cadangan dengan 8890)
+        const PINS = { 
+            "Ummu Nabila": "28820", 
+            "Teteh Lilis": "22550", 
+            "Ummu Yasmin": "22880", 
+            "Cadangan": "8890" 
+        };
+        
         let soldTickets = [];
         let isSaving = false;
 
@@ -116,8 +122,9 @@
             const noVal = parseInt(document.getElementById('no').value);
             const p = document.getElementById('pin').value;
 
-            if (PINS[pjSelect] && PINS[pjSelect] !== p) { alert("PIN Salah!"); return; }
-            if (soldTickets.includes(noVal)) { alert("Tiket sudah terjual!"); return; }
+            // Validasi PIN Kunci
+            if (PINS[pjSelect] && PINS[pjSelect] !== p) { alert("PIN Salah untuk PJ yang dipilih!"); return; }
+            if (soldTickets.includes(noVal)) { alert("Tiket sudah terjual! Pilih nomor lain."); return; }
             if (noVal < 1 || noVal > 450) { alert("Nomor tidak valid (1-450)"); return; }
 
             let count = parseInt(localStorage.getItem('sessionCount') || 0);
@@ -144,7 +151,7 @@
                 localStorage.setItem('sessionCount', count + 1);
                 alert("Data tersimpan!");
                 location.reload();
-            } catch (e) { alert("Gagal koneksi."); isSaving = false; }
+            } catch (e) { alert("Gagal koneksi. Cek jaringan Anda."); isSaving = false; }
         }
 
         function showAuth() { document.getElementById('input-panel').style.display = 'block'; }
