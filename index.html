@@ -28,6 +28,7 @@
             <div class="sidebar">
                 <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
+                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;"></div>
             </div>
         </aside>
 
@@ -42,13 +43,19 @@
                         <button class="btn btn-warning btn-sm mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
                         <button class="btn btn-primary btn-sm mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                         <div id="input-panel" style="display:none;">
-                            <input type="number" id="no" class="form-control" placeholder="No Tiket" readonly>
+                            <input type="number" id="no" class="form-control" placeholder="No Tiket (1-450)" readonly>
                             <input type="date" id="tgl" class="form-control mt-1">
                             <select id="pj" class="form-control mt-1">
                                 <option>Ummu Nabila</option><option>Teteh Lilis</option>
                                 <option>Ummu Yasmin</option><option>Cadangan</option>
                             </select>
-                            <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan">
+                            <!-- Dropdown Status Baru -->
+                            <select id="status" class="form-control mt-1">
+                                <option value="Terjual">Terjual</option>
+                                <option value="Tersedia">Tersedia</option>
+                            </select>
+                            <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan Tambahan">
+                            <input type="text" id="username" class="form-control mt-1" placeholder="Username PJ">
                             <input type="password" id="pin" class="form-control mt-1" placeholder="PIN Akses">
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
@@ -62,13 +69,14 @@
             <div class="card p-3 mt-3"><h5>Grid Tiket</h5><div id="grid"></div></div>
 
             <div class="card p-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5>Riwayat Transaksi</h5>
-                    <input type="text" id="search-input" class="form-control form-control-sm w-50" placeholder="🔍 Cari data..." onkeyup="filterTable()">
+                <h5>Riwayat Transaksi</h5>
+                <div class="input-group mb-2 no-print">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+                    <input type="text" id="search-pj" class="form-control form-control-sm" placeholder="Cari nama PJ..." onkeyup="filterTable()">
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Ket</th></tr></thead>
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Status</th><th>Ket</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -77,22 +85,22 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw1Gu-cxt900gxbrLcrWVCvhBVJhHYsyA3-j2Wmtf71IEQ1iin31ZNMe4ZKBBFCPAq2ag/exec";
         const PINS = { "Ummu Nabila": "28820", "Teteh Lilis": "22550", "Ummu Yasmin": "22880", "Cadangan": "8890" };
         let soldTickets = [];
         let isSaving = false;
 
         async function init() {
+            document.getElementById('username').value = localStorage.getItem('savedUser') || "";
             const res = await fetch(GAS_URL);
             const data = await res.json();
             soldTickets = data.map(r => parseInt(r[0]));
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`).join('');
-            
+            // Menampilkan data sesuai urutan baru (Status & Keterangan)
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
             let sold = soldTickets.length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
-            
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             for(let i=1; i<=450; i++) {
                 let isSold = soldTickets.includes(i);
@@ -100,29 +108,31 @@
             }
         }
 
-        function filterTable() {
-            let input = document.getElementById("search-input").value.toUpperCase();
-            let tr = document.getElementById("transaksi-body").getElementsByTagName("tr");
-            for (let i = 0; i < tr.length; i++) {
-                tr[i].style.display = tr[i].innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
-            }
-        }
-
         async function save() {
             if (isSaving) return;
-            const noVal = parseInt(document.getElementById('no').value);
             const pjSelect = document.getElementById('pj').value;
+            const noVal = parseInt(document.getElementById('no').value);
             const p = document.getElementById('pin').value;
-
-            if (soldTickets.includes(noVal)) { alert("Tiket ini sudah terjual!"); return; }
-            if (PINS[pjSelect] !== p) { alert("PIN Salah!"); return; }
-
-            isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
-            const payload = { no: noVal, tgl: document.getElementById('tgl').value, pj: pjSelect, keterangan: document.getElementById('keterangan').value, pin: p, hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
             
+            // Validasi PIN Keras
+            if (PINS[pjSelect] !== p) { alert("PIN Tidak Sesuai!"); return; }
+            
+            const payload = { 
+                no: noVal, 
+                tgl: document.getElementById('tgl').value, 
+                pj: pjSelect, 
+                status: document.getElementById('status').value,
+                keterangan: document.getElementById('keterangan').value,
+                username: document.getElementById('username').value, 
+                pin: p, 
+                hp: document.getElementById('hp').value, 
+                alamat: document.getElementById('alamat').value 
+            };
+            
+            isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
             try {
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-                alert("Data berhasil disimpan!"); location.reload();
+                alert("Data berhasil tersimpan!"); location.reload();
             } catch (e) { alert("Gagal koneksi."); isSaving = false; }
         }
 
