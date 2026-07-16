@@ -28,6 +28,7 @@
             <div class="sidebar">
                 <div class="text-center py-3"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/logo%20MWD.png" width="80%" style="border-radius: 5px; border: 2px solid white;"></div>
                 <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column"><li class="nav-item"><a href="#" class="nav-link active">Dashboard</a></li></ul></nav>
+                <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 15px;"><img src="https://raw.githubusercontent.com/yunitarizkyzafitra-bit/E-Tiket_Dirosa_2026/main/Gambar%20Tiket.png" width="100%" style="border-radius: 5px;"></div>
             </div>
         </aside>
 
@@ -42,7 +43,7 @@
                         <button class="btn btn-warning btn-sm mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
                         <button class="btn btn-primary btn-sm mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                         <div id="input-panel" style="display:none;">
-                            <input type="number" id="no" class="form-control" placeholder="No Tiket (1-450)" readonly>
+                            <input type="number" id="no" class="form-control" placeholder="No Tiket (1-450)">
                             <input type="date" id="tgl" class="form-control mt-1">
                             <select id="pj" class="form-control mt-1">
                                 <option>Ummu Nabila</option><option>Teteh Lilis</option>
@@ -69,7 +70,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th></tr></thead>
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Status</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -80,22 +81,20 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
         const PINS = { "Ummu Nabila": "28820", "Teteh Lilis": "22550", "Ummu Yasmin": "22880", "Cadangan": "8890" };
-        const RANGES = { "Ummu Nabila": [1, 100], "Teteh Lilis": [101, 200], "Ummu Yasmin": [201, 350], "Cadangan": [351, 450] };
-        
         let soldTickets = [];
         let isSaving = false;
 
         async function init() {
+            document.getElementById('username').value = localStorage.getItem('savedUser') || "";
+            document.getElementById('pin').value = localStorage.getItem('savedPin') || "";
             const res = await fetch(GAS_URL);
             const data = await res.json();
             soldTickets = data.map(r => parseInt(r[0])); 
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join('');
-            
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[4]}</td></tr>`).join('');
             let sold = soldTickets.length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
             new Chart(document.getElementById('myChart'), { type: 'doughnut', data: { datasets: [{ data: [sold, 450-sold], backgroundColor: ['#ef4444', '#10b981'] }] } });
-            
             const grid = document.getElementById('grid'); grid.innerHTML = "";
             for(let i=1; i<=450; i++) {
                 let isSold = soldTickets.includes(i);
@@ -103,34 +102,33 @@
             }
         }
 
-        async function save() {
-            if (isSaving) return;
-            const pj = document.getElementById('pj').value;
-            const no = parseInt(document.getElementById('no').value);
-            const pin = document.getElementById('pin').value;
-            
-            // Validasi PIN dan Rentang Tiket
-            if (PINS[pj] !== pin) return alert("PIN salah untuk PJ tersebut!");
-            if (no < RANGES[pj][0] || no > RANGES[pj][1]) return alert("Nomor ini bukan wilayah tanggung jawab Anda!");
-            if (soldTickets.includes(no)) return alert("Tiket sudah terjual!");
-
-            isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
-            const payload = { 
-                no: no, tgl: document.getElementById('tgl').value, pj: pj, 
-                username: document.getElementById('username').value, pin: pin, 
-                hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value 
-            };
-            
-            try {
-                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-                alert("Data berhasil disimpan!"); location.reload();
-            } catch (e) { alert("Gagal koneksi."); isSaving = false; }
+        function filterTable() {
+            let input = document.getElementById("search-pj").value.toUpperCase();
+            let tr = document.getElementById("transaksi-body").getElementsByTagName("tr");
+            for (let i = 0; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName("td")[2];
+                if (td) tr[i].style.display = (td.textContent || td.innerText).toUpperCase().indexOf(input) > -1 ? "" : "none";
+            }
         }
 
+        function selectTicket(no) { document.getElementById('no').value = no; showAuth(); }
+        async function save() {
+            if (isSaving) return;
+            const pjSelect = document.getElementById('pj').value;
+            const noVal = parseInt(document.getElementById('no').value);
+            const p = document.getElementById('pin').value;
+            if (PINS[pjSelect] && PINS[pjSelect] !== p) { alert("PIN Salah!"); return; }
+            if (soldTickets.includes(noVal)) { alert("Tiket sudah terjual!"); return; }
+            const payload = { no: noVal, tgl: document.getElementById('tgl').value, pj: pjSelect, username: document.getElementById('username').value, pin: p, hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
+            localStorage.setItem('savedUser', payload.username); localStorage.setItem('savedPin', p);
+            isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
+            try {
+                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                alert("Data berhasil tersimpan!"); location.reload();
+            } catch (e) { alert("Gagal koneksi."); isSaving = false; }
+        }
         function showAuth() { document.getElementById('input-panel').style.display = 'block'; }
         function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
-        function selectTicket(no) { document.getElementById('no').value = no; showAuth(); }
-        function filterTable() { /* Fungsi bawaan Anda */ }
         window.onload = init;
     </script>
 </body>
