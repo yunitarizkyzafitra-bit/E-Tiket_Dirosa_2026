@@ -42,14 +42,13 @@
                         <button class="btn btn-warning btn-sm mb-2" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
                         <button class="btn btn-primary btn-sm mb-2" onclick="showAuth()"><i class="fas fa-lock"></i> Input Tiket</button>
                         <div id="input-panel" style="display:none;">
-                            <input type="number" id="no" class="form-control" placeholder="No Tiket (1-450)" readonly>
+                            <input type="number" id="no" class="form-control" placeholder="No Tiket" readonly>
                             <input type="date" id="tgl" class="form-control mt-1">
                             <select id="pj" class="form-control mt-1">
                                 <option>Ummu Nabila</option><option>Teteh Lilis</option>
                                 <option>Ummu Yasmin</option><option>Cadangan</option>
                             </select>
                             <input type="text" id="keterangan" class="form-control mt-1" placeholder="Keterangan">
-                            <input type="text" id="username" class="form-control mt-1" placeholder="Username PJ">
                             <input type="password" id="pin" class="form-control mt-1" placeholder="PIN Akses">
                             <input type="text" id="hp" class="form-control mt-1" placeholder="No HP">
                             <input type="text" id="alamat" class="form-control mt-1" placeholder="Alamat">
@@ -65,11 +64,11 @@
             <div class="card p-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5>Riwayat Transaksi</h5>
-                    <input type="text" id="search-input" class="form-control form-control-sm w-50" placeholder="🔍 Cari data..." onkeyup="searchTable()">
+                    <input type="text" id="search-input" class="form-control form-control-sm w-50" placeholder="🔍 Cari data..." onkeyup="filterTable()">
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-sm text-xs" id="transaksi-table">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Ket</th></tr></thead>
+                    <table class="table table-bordered table-striped table-sm text-xs">
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Ket</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -78,7 +77,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw1Gu-cxt900gxbrLcrWVCvhBVJhHYsyA3-j2Wmtf71IEQ1iin31ZNMe4ZKBBFCPAq2ag/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyhI87O2-G75tfGoWkTqq2Bb-Vx9G0_IbL_mmLQ4A6UJtpUPEPEO6WTuglzE6hiW_JiYA/exec";
         const PINS = { "Ummu Nabila": "28820", "Teteh Lilis": "22550", "Ummu Yasmin": "22880", "Cadangan": "8890" };
         let soldTickets = [];
         let isSaving = false;
@@ -86,9 +85,9 @@
         async function init() {
             const res = await fetch(GAS_URL);
             const data = await res.json();
-            soldTickets = data.map(r => parseInt(r[0])); 
+            soldTickets = data.map(r => parseInt(r[0]));
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td></tr>`).join('');
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[4]}</td></tr>`).join('');
             
             let sold = soldTickets.length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
@@ -101,42 +100,35 @@
             }
         }
 
-        function searchTable() {
-            const filter = document.getElementById("search-input").value.toUpperCase();
-            const tr = document.getElementById("transaksi-body").getElementsByTagName("tr");
+        function filterTable() {
+            let input = document.getElementById("search-input").value.toUpperCase();
+            let tr = document.getElementById("transaksi-body").getElementsByTagName("tr");
             for (let i = 0; i < tr.length; i++) {
-                tr[i].style.display = tr[i].innerText.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+                tr[i].style.display = tr[i].innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
             }
         }
 
-        function selectTicket(no) { document.getElementById('no').value = no; showAuth(); }
-
         async function save() {
-            const noVal = parseInt(document.getElementById('no').value);
-            const p = document.getElementById('pin').value;
-            const pjSelect = document.getElementById('pj').value;
-
-            // Mencegah double click dan double input
             if (isSaving) return;
+            const noVal = parseInt(document.getElementById('no').value);
+            const pjSelect = document.getElementById('pj').value;
+            const p = document.getElementById('pin').value;
+
             if (soldTickets.includes(noVal)) { alert("Tiket ini sudah terjual!"); return; }
             if (PINS[pjSelect] !== p) { alert("PIN Salah!"); return; }
 
-            const payload = { 
-                no: noVal, tgl: document.getElementById('tgl').value, pj: pjSelect, 
-                ket: document.getElementById('keterangan').value,
-                username: document.getElementById('username').value, pin: p, 
-                hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value 
-            };
-            
             isSaving = true; document.getElementById('save-btn').innerText = "Mengirim...";
+            const payload = { no: noVal, tgl: document.getElementById('tgl').value, pj: pjSelect, keterangan: document.getElementById('keterangan').value, pin: p, hp: document.getElementById('hp').value, alamat: document.getElementById('alamat').value };
+            
             try {
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-                alert("Data berhasil tersimpan!"); location.reload();
+                alert("Data berhasil disimpan!"); location.reload();
             } catch (e) { alert("Gagal koneksi."); isSaving = false; }
         }
 
         function showAuth() { document.getElementById('input-panel').style.display = 'block'; }
         function closeInput() { document.getElementById('input-panel').style.display = 'none'; }
+        function selectTicket(no) { document.getElementById('no').value = no; showAuth(); }
         window.onload = init;
     </script>
 </body>
