@@ -67,7 +67,7 @@
                 <h5>Riwayat Transaksi</h5>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm text-xs">
-                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>Status</th></tr></thead>
+                        <thead class="bg-dark"><tr><th>Tgl</th><th>No</th><th>PJ</th><th>HP</th><th>Alamat</th><th>Status</th></tr></thead>
                         <tbody id="transaksi-body"></tbody>
                     </table>
                 </div>
@@ -80,10 +80,14 @@
         let isSaving = false;
 
         async function init() {
+            // Load kredensial jika ada
+            document.getElementById('username').value = localStorage.getItem('savedUser') || "";
+            document.getElementById('pin').value = localStorage.getItem('savedPin') || "";
+
             const res = await fetch(GAS_URL);
             const data = await res.json();
             const tbody = document.getElementById('transaksi-body');
-            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[4]}</td></tr>`).join('');
+            tbody.innerHTML = data.slice().reverse().map(r => `<tr><td>${r[1]}</td><td>${r[0]}</td><td>${r[2]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[4]}</td></tr>`).join('');
             
             let sold = data.filter(r => r[4] === 'Terjual').length;
             document.getElementById('total-percent').innerText = ((sold / 450) * 100).toFixed(1) + "%";
@@ -101,26 +105,33 @@
         async function save() {
             if (isSaving) return;
             let count = parseInt(localStorage.getItem('sessionCount') || 0);
-            if (count >= 10) { alert("Batas 10 tiket tercapai. Login kembali untuk sesi baru."); return; }
+            if (count >= 10) { alert("Batas 10 tiket tercapai."); return; }
+
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('pin').value;
 
             const payload = {
                 no: document.getElementById('no').value,
                 tgl: document.getElementById('tgl').value,
                 pj: document.getElementById('pj').value,
-                username: document.getElementById('username').value,
-                pin: document.getElementById('pin').value,
+                username: u,
+                pin: p,
                 hp: document.getElementById('hp').value,
                 alamat: document.getElementById('alamat').value
             };
 
-            if (!payload.no || !payload.username || !payload.pin) { alert("Lengkapi No Tiket, Username, dan PIN!"); return; }
+            if (!payload.no || !u || !p) { alert("Lengkapi No Tiket, Username, dan PIN!"); return; }
+
+            // Simpan ke memori agar tidak perlu mengetik ulang
+            localStorage.setItem('savedUser', u);
+            localStorage.setItem('savedPin', p);
 
             isSaving = true;
             const btn = document.getElementById('save-btn');
             btn.disabled = true; btn.innerText = "Mengirim...";
 
             try {
-                const response = await fetch(GAS_URL, {
+                await fetch(GAS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
@@ -130,7 +141,7 @@
                 alert("Data berhasil tersimpan!");
                 location.reload();
             } catch (e) {
-                alert("Gagal koneksi. Cek Username/PIN atau jaringan Anda.");
+                alert("Gagal koneksi. Cek jaringan Anda.");
                 isSaving = false; btn.disabled = false; btn.innerText = "Simpan Data";
             }
         }
