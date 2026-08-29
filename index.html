@@ -178,7 +178,7 @@
                 </div>
             </div>
 
-            <!-- VIEW 2: DAFTAR DISTRIBUSI TIKET PJ -->
+            <!-- VIEW 2: DAFTAR DISTRIBUSI TIKET PJ (LAYAR TRANSPARANSI KETUA EO) -->
             <div id="view-distribusi" class="app-view">
                 <div class="card p-3 border-success shadow-sm">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: 10px;">
@@ -197,6 +197,7 @@
                         </div>
                     </div>
 
+                    <!-- Ringkasan Statistik Layar -->
                     <div class="row text-center mb-3">
                         <div class="col-md-4">
                             <div class="info-box bg-light border py-2 mb-1">
@@ -218,6 +219,7 @@
                         </div>
                     </div>
 
+                    <!-- Tabel Transparansi di Layar -->
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped table-sm text-xs" style="vertical-align: middle;">
                             <thead class="bg-success text-center">
@@ -229,7 +231,9 @@
                                     <th style="width: 10%;">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="distribusi-body"></tbody>
+                            <tbody id="distribusi-body">
+                                <!-- Diisi secara dinamis via JavaScript -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -265,10 +269,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const GAS_URL = "ISI_URL_WEB_APP_ANDA_DISINI"; // Ganti dengan URL deployment Web App GAS Anda
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyb5Nq3aDdriDfgYXJUQ5qzzRe7FZTO2qCxGudkZU7UFMIjDMIsmNKveLtwBeeP9n8Jvw/exec";
         
         let globalDatabase = {}; 
         let chartInstance = null;
+
+        // Daftar Sinkronisasi PIN Masing-Masing PJ (Dapat disesuaikan kodenya sesuai kebutuhan)
+        const pjPins = {
+            "Ummu Nabila": "1111",
+            "Teteh Elis": "2222",
+            "Ummu Yasmin": "3333",
+            "Cadangan": "9999"
+        };
 
         function switchView(viewName) {
             document.querySelectorAll('.app-view').forEach(el => el.classList.remove('active'));
@@ -287,31 +299,22 @@
         async function init() {
             try {
                 const res = await fetch(GAS_URL);
-                const rowsData = await res.json();
+                const data = await res.json();
                 
                 globalDatabase = {};
-                
-                // Lewati baris pertama jika itu header (asumsi baris 0 adalah header judul kolom)
-                let dataRows = rowsData.length > 0 && isNaN(rowsData[0][0]) ? rowsData.slice(1) : rowsData;
-
-                dataRows.forEach(r => {
+                data.forEach(r => {
                     let noUrut = parseInt(r[0]);
                     let statusBayar = String(r[4] || '').trim(); 
                     if (!isNaN(noUrut) && statusBayar !== '') {
                         globalDatabase[noUrut] = {
-                            tanggal: r[1], 
-                            pj: String(r[2]).trim(), 
-                            target: r[3], 
-                            status: r[4],
-                            keterangan: r[5], 
-                            no_hp: r[6], 
-                            alamat: r[7]
+                            tanggal: r[1], pj: String(r[2]).trim(), target: r[3], status: r[4],
+                            keterangan: r[5], no_hp: r[6], alamat: r[7]
                         };
                     }
                 });
                 
                 const tbody = document.getElementById('transaksi-body');
-                tbody.innerHTML = dataRows.slice().reverse().map(r => {
+                tbody.innerHTML = data.slice().reverse().map(r => {
                     let noUrutVal  = r[0] || '-';
                     let tanggalVal = r[1] || '-';
                     let pjVal      = r[2] || '-';
@@ -321,9 +324,7 @@
                     let displayHp  = r[6] || '-';
                     let alamatVal  = r[7] || '-';
                     
-                    if (isNaN(parseInt(noUrutVal))) return ''; // Abaikan jika baris header
-
-                    let badgeColor = (String(statusVal).toLowerCase().includes('belum')) ? 'badge-warning text-white' : 'badge-danger';
+                    let badgeColor = (statusVal.toLowerCase().includes('belum')) ? 'badge-warning text-white' : 'badge-danger';
                     let editBtn = `<button class="btn btn-info btn-xs font-weight-bold px-1 py-0 mb-1" onclick="editTicket(${noUrutVal})" title="Edit Data"><i class="fas fa-edit"></i> Edit</button>`;
 
                     return `<tr>
@@ -342,7 +343,7 @@
                 let soldCount = Object.keys(globalDatabase).length;
                 document.getElementById('total-percent').innerText = ((soldCount / 450) * 100).toFixed(1) + "%";
                 
-                let lunasCount = Object.values(globalDatabase).filter(item => !String(item.status).toLowerCase().includes('belum')).length;
+                let lunasCount = Object.values(globalDatabase).filter(item => !item.status.toLowerCase().includes('belum')).length;
                 let belumCount = soldCount - lunasCount;
 
                 if (chartInstance) { chartInstance.destroy(); }
@@ -365,7 +366,7 @@
                     let actionHtml = `onclick="selectTicket(${i})"`;
 
                     if (record) {
-                        if (String(record.status).toLowerCase().includes('belum')) {
+                        if (record.status.toLowerCase().includes('belum')) {
                             boxClass = 'bg-kuning';
                             titleText = `Tiket No ${i} : Belum Lunas`;
                             actionHtml = `onclick="editTicket(${i})"`;
@@ -382,11 +383,13 @@
             } catch(e) { console.error("Gagal sinkronisasi data:", e); }
         }
 
+        // Sinkronisasi otomatis field User PJ berdasarkan dropdown PJ yang dipilih
         function syncUsernamePJ() {
             let selectedPj = document.getElementById('pj').value;
             document.getElementById('username').value = selectedPj;
         }
 
+        // Render Layar Daftar Distribusi Tiket PJ dengan Kolom Nomor Terstruktur
         function renderDistribusiScreen() {
             const selectedPJ = document.getElementById('screen-filter-pj').value;
             let keys = Object.keys(globalDatabase).sort((a, b) => parseInt(a) - parseInt(b));
@@ -397,16 +400,16 @@
 
             keys.forEach(no => {
                 let r = globalDatabase[no];
-                let isMatch = (selectedPJ === "SEMUA" || String(r.pj).toLowerCase() === selectedPJ.toLowerCase());
+                let isMatch = (selectedPJ === "SEMUA" || r.pj.toLowerCase() === selectedPJ.toLowerCase());
                 if (isMatch) {
                     totalTiket++;
-                    let isBelum = String(r.status).toLowerCase().includes('belum');
+                    let isBelum = r.status.toLowerCase().includes('belum');
                     if(isBelum) totalBelum++; else totalLunas++;
 
                     let namaPembeli = (r.keterangan || 'Tanpa Nama').trim();
                     let statusBersih = isBelum ? 'Belum Lunas' : 'Lunas';
                     
-                    let existing = distribusiList.find(item => item.nama.toLowerCase() === namaPembeli.toLowerCase() && item.pj.toLowerCase() === String(r.pj).toLowerCase() && item.status === statusBersih);
+                    let existing = distribusiList.find(item => item.nama.toLowerCase() === namaPembeli.toLowerCase() && item.pj.toLowerCase() === r.pj.toLowerCase() && item.status === statusBersih);
                     
                     if (existing) {
                         existing.listNomor.push(parseInt(no));
@@ -449,6 +452,7 @@
             document.getElementById('distribusi-body').innerHTML = tbodyHtml;
         }
 
+        // Fungsi Cetak PDF Profesional dengan Kolom Nomor Terstruktur
         function generateFilteredPDF() {
             const selectedPJ = document.getElementById('pdf-filter-pj').value;
             const { jsPDF } = window.jspdf;
@@ -473,10 +477,10 @@
 
             keys.forEach(no => {
                 let r = globalDatabase[no];
-                let isMatch = (selectedPJ === "SEMUA" || String(r.pj).toLowerCase() === selectedPJ.toLowerCase());
+                let isMatch = (selectedPJ === "SEMUA" || r.pj.toLowerCase() === selectedPJ.toLowerCase());
                 if (isMatch) {
                     totalTiketPJ++;
-                    let isBelum = String(r.status).toLowerCase().includes('belum');
+                    let isBelum = r.status.toLowerCase().includes('belum');
                     if (isBelum) { totalBelumPJ++; } else { totalLunasPJ++; }
 
                     let namaPembeli = (r.keterangan || 'Tanpa Nama').trim();
@@ -604,12 +608,12 @@
             document.getElementById('pin').value = ""; 
             let record = globalDatabase[noUrut];
             if (record) {
-                document.getElementById('tanggal').value = record.tanggal ? String(record.tanggal).split('T')[0] : '';
+                document.getElementById('tanggal').value = record.tanggal ? record.tanggal.split('T')[0] : '';
                 document.getElementById('pj').value = record.pj || 'Ummu Nabila';
                 document.getElementById('keterangan').value = record.keterangan || '';
                 document.getElementById('no_hp').value = record.no_hp || '';
                 document.getElementById('alamat').value = record.alamat || '';
-                document.getElementById('status').value = String(record.status).toLowerCase().includes('belum') ? 'Belum Lunas' : 'Lunas';
+                document.getElementById('status').value = record.status.toLowerCase().includes('belum') ? 'Belum Lunas' : 'Lunas';
             } else {
                 document.getElementById('keterangan').value = '';
                 document.getElementById('no_hp').value = '';
@@ -628,26 +632,19 @@
             if (!noUrut) return alert("Silakan pilih nomor urut tiket dari kotak grid atau tabel!");
             if (!pinInput) return alert("Masukkan PIN Akses Keamanan PJ terlebih dahulu!");
 
+            // Logika Sinkronisasi PIN & Pembatasan PJ
+            if (pjPins[pj] && pinInput !== pjPins[pj]) {
+                return alert(`PIN Akses salah untuk PJ "${pj}". Tiap PJ hanya dapat menginput sesuai dengan nomor dan otorisasi PJ-nya masing-masing.`);
+            }
+
+            // Validasi tambahan jika tiket sudah pernah diinput oleh PJ lain sebelumnya
+            let existingRecord = globalDatabase[noUrut];
+            if (existingRecord && existingRecord.pj && existingRecord.pj !== pj && pj !== "Cadangan") {
+                return alert(`Akses ditolak! Tiket nomor ${noUrut} ini terdaftar milik PJ "${existingRecord.pj}". Anda hanya dapat mengedit data sesuai dengan PJ Anda.`);
+            }
+
             let rawInputHp = document.getElementById('no_hp').value.trim();
             if (!rawInputHp) return alert("Nomor HP wajib diisi!");
-
-            let validasiPjRange = true;
-            let pesanErrorRange = "";
-
-            if (pj === "Ummu Nabila" && (noUrut < 1 || noUrut > 150)) {
-                validasiPjRange = false;
-                pesanErrorRange = "Penanggung Jawab Ummu Nabila hanya dapat menginput nomor tiket pada rentang 1 s.d 150!";
-            } else if (pj === "Teteh Elis" && (noUrut < 151 || noUrut > 300)) {
-                validasiPjRange = false;
-                pesanErrorRange = "Penanggung Jawab Teteh Elis hanya dapat menginput nomor tiket pada rentang 151 s.d 300!";
-            } else if (pj === "Ummu Yasmin" && (noUrut < 301 || noUrut > 450)) {
-                validasiPjRange = false;
-                pesanErrorRange = "Penanggung Jawab Ummu Yasmin hanya dapat menginput nomor tiket pada rentang 301 s.d 450!";
-            }
-
-            if (!validasiPjRange) {
-                return alert(pesanErrorRange);
-            }
 
             const saveBtn = document.getElementById('save-btn');
             saveBtn.innerText = "Memverifikasi Keamanan...";
@@ -667,7 +664,7 @@
             };
             
             try {
-                let response = await fetch(GAS_URL, {
+                let response = await fetch(GAS_URL, { 
                     method: 'POST', 
                     body: JSON.stringify(payload) 
                 });
@@ -676,7 +673,7 @@
                 if (result.status === "error") {
                     alert(result.message); 
                 } else {
-                    alert("Autentikasi Berhasil: PIN terverifikasi dan data tiket berhasil disimpan dengan aman!"); 
+                    alert("Autentikasi Berhasil: PIN tersinkronisasi dan data tiket berhasil disimpan sesuai otorisasi PJ!"); 
                     location.reload();
                 }
             } catch (e) { 
